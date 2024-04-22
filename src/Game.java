@@ -33,6 +33,7 @@ public class Game {
     public int rkey;    // key   (for press/release)
     public boolean updated = true;
     public boolean menu = true;
+    public boolean about = true;
     public int timer = 0;
     public int animationtimer = 0;
     public int menuselect = 0;
@@ -70,6 +71,17 @@ public class Game {
             }
         }
     }
+
+    public void startGame(){
+        refresh();
+        menu = false;
+        updated = true;
+    }
+    public void showAbout(){
+        about = true;
+        //drawBox(5,5,);
+    }
+    public void loadMap(){}
 
     public void drawMenu(int x, int y){
         char[][] logo = new char[][]{
@@ -173,7 +185,7 @@ public class Game {
                 drawAnimation(5 + 2,5+10, animationtimer + 46);
                 updated = false;
             }
-
+            //drawBox( 5,34,3,30,"menuselect : " + menuselect);
             if(updated && !menu) { refresh(); drawMap(5,5); updated = false;}
 
 
@@ -186,10 +198,18 @@ public class Game {
             }
             if(keypr==1) {    // if keyboard button pressed
                 if(menu){
-                    if(rkey==KeyEvent.VK_LEFT) { menuselect = (menuselect + 3) % 4; updated = true;}
-                    if(rkey==KeyEvent.VK_RIGHT){ menuselect = (menuselect + 1) % 4; updated = true;}
-                    if(rkey==KeyEvent.VK_UP)   { menuselect = (menuselect + 1) % 4; updated = true;}
-                    if(rkey==KeyEvent.VK_DOWN) { menuselect = (menuselect + 3) % 4; updated = true;}
+                    if(rkey==KeyEvent.VK_LEFT) { menuselect = (menuselect + 3) % 4; updated = true; }
+                    if(rkey==KeyEvent.VK_RIGHT){ menuselect = (menuselect + 1) % 4; updated = true; }
+                    if(rkey==KeyEvent.VK_UP)   { menuselect = (menuselect + 3) % 4; updated = true; }
+                    if(rkey==KeyEvent.VK_DOWN) { menuselect = (menuselect + 1) % 4; updated = true; }
+                    if(rkey==KeyEvent.VK_ENTER){
+                        switch (menuselect){
+                            case 0: { startGame(); break; }
+                            case 1: { showAbout(); break; }
+                            case 2: { loadMap(); break; }
+                            case 3: { System.exit(0); break; }
+                        }
+                    }
 
                 }
                 else {
@@ -208,13 +228,9 @@ public class Game {
                         str=cn.readLine();     // keyboardlistener running and readline input by using enter
                         cn.getTextWindow().setCursorPosition(5, 20);
                         cn.getTextWindow().output(str);
-                    }
-
-                    keypr=0;    // last action
+                    }   // last action
                 }
-
-
-
+                keypr=0;
             }
             Thread.sleep(25);
             timer();
