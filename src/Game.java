@@ -7,23 +7,23 @@ import enigma.console.TextAttributes;
 import java.awt.Color;
 
 public class Game {
-    public enigma.console.Console cn = Enigma.getConsole("Mouse and Keyboard", 226,60);
+    public enigma.console.Console cn = Enigma.getConsole("Mouse and Keyboard", 120,37);
     public TextMouseListener tmlis;
     public KeyListener klis;
 
     GameField map = new GameField();
 
-    private TextAttributes red    = new TextAttributes(Color.WHITE, Color.RED);
-    private TextAttributes green  = new TextAttributes(Color.WHITE, Color.GREEN);
-    private TextAttributes blue   = new TextAttributes(Color.WHITE, Color.BLUE);
-    private TextAttributes yellow = new TextAttributes(Color.YELLOW);
+    private TextAttributes red      = new TextAttributes(Color.WHITE, Color.RED);
+    private TextAttributes green    = new TextAttributes(Color.WHITE, Color.GREEN);
+    private TextAttributes blue     = new TextAttributes(Color.WHITE, Color.BLUE);
+    private TextAttributes yellow   = new TextAttributes(Color.YELLOW);
     private TextAttributes darkgray = new TextAttributes(Color.DARK_GRAY);
-    private TextAttributes gray = new TextAttributes(Color.GRAY);
-    private TextAttributes lightgray = new TextAttributes(Color.white, Color.LIGHT_GRAY);
-    private TextAttributes black = new TextAttributes(Color.white, Color.BLACK);
-    private TextAttributes cyan   = new TextAttributes(Color.CYAN);
-    private TextAttributes white   = new TextAttributes(Color.WHITE);
-    private TextAttributes color = black;
+    private TextAttributes gray     = new TextAttributes(Color.GRAY);
+    private TextAttributes lightgray= new TextAttributes(Color.white, Color.LIGHT_GRAY);
+    private TextAttributes black    = new TextAttributes(Color.white, Color.BLACK);
+    private TextAttributes cyan     = new TextAttributes(Color.CYAN);
+    private TextAttributes white    = new TextAttributes(Color.WHITE);
+    private TextAttributes color    = black;
 
 
     // ------ Standard variables for mouse and keyboard ------
@@ -33,7 +33,8 @@ public class Game {
     public int rkey;    // key   (for press/release)
     public boolean updated = true;
     public boolean menu = true;
-    public boolean about = true;
+    public boolean menumap = false;
+    public boolean menuabout = false;
     public int timer = 0;
     public int animationtimer = 0;
     public int menuselect = 0;
@@ -47,6 +48,11 @@ public class Game {
         for(int i = 0; i < rows; i++){ for(int j = 0; j < cols; j++) {cn.getTextWindow().output(j,i,' ');}}
     }
 
+    public void drawEmpty(int x, int y, int length, int width){
+        for(int i = 0 ; i < length ; i++){
+            for(int j = 0 ; j < width; j++) { cn.getTextWindow().output( x + j , y + i , ' ' , color); }
+        }
+    }
     public void drawArray(int x, int y, char[][] a) {
         for (int i = 0; i < a.length; i++) {
             for (int j = 0; j < a[i].length; j++) {
@@ -74,14 +80,19 @@ public class Game {
 
     public void startGame(){
         refresh();
+        map.importMap();
         menu = false;
         updated = true;
     }
     public void showAbout(){
-        about = true;
-        //drawBox(5,5,);
+        menumap = false;
+        menuabout = true;        //drawBox(5,5,);
     }
-    public void loadMap(){}
+    public void loadMap(){
+        map.importMap();
+        menumap = true;
+        menuabout = false;
+    }
 
     public void drawMenu(int x, int y){
         char[][] logo = new char[][]{
@@ -110,7 +121,7 @@ public class Game {
         color = white;
 
         if(menuselect == 2) color = yellow;
-        drawBox(x + 34, y + 19, 5,75,"l o a d   m a p");
+        drawBox(x + 34, y + 19, 5,75, map.isLoaded() ? "m a p   l o a d e d" : "m a p   n o t   f o u n d");
         color = white;
 
         if(menuselect == 3) color = yellow;
@@ -184,9 +195,20 @@ public class Game {
                 if(updated) { drawMenu(5,5); }
                 drawAnimation(5 + 2,5+10, animationtimer + 46);
                 updated = false;
+                if(menumap){
+                    drawEmpty(31,7,25,57);
+                    drawBox(31,7,25,57);
+                    drawMap(33,8);
+                    // drawBox(5,34, 5, 51 , map.isLoaded() ? "m a p   l o a d e d" : "m a p   n o t   f o u n d");
+                }
+                if(menuabout){
+                    drawEmpty(31,7,25,57);
+                    drawBox(31,7,25,57, "this is a game description");
+                    // drawBox(5,34, 5, 51 , map.isLoaded() ? "m a p   l o a d e d" : "f i l e   n o t   f o u n d");
+                }
             }
             //drawBox( 5,34,3,30,"menuselect : " + menuselect);
-            if(updated && !menu) { refresh(); drawMap(5,5); updated = false;}
+            if(updated && !menu) { refresh(); drawBox(31,7,25,57); drawMap(33,8); updated = false;}
 
 
 
@@ -198,25 +220,25 @@ public class Game {
             }
             if(keypr==1) {    // if keyboard button pressed
                 if(menu){
-                    if(rkey==KeyEvent.VK_LEFT) { menuselect = (menuselect + 3) % 4; updated = true; }
-                    if(rkey==KeyEvent.VK_RIGHT){ menuselect = (menuselect + 1) % 4; updated = true; }
-                    if(rkey==KeyEvent.VK_UP)   { menuselect = (menuselect + 3) % 4; updated = true; }
-                    if(rkey==KeyEvent.VK_DOWN) { menuselect = (menuselect + 1) % 4; updated = true; }
-                    if(rkey==KeyEvent.VK_ENTER){
+                    if(rkey==KeyEvent.VK_LEFT) { menuselect = (menuselect + 3) % 4; menuabout = false; menumap = false; updated = true; }
+                    if(rkey==KeyEvent.VK_RIGHT){ menuselect = (menuselect + 1) % 4; menuabout = false; menumap = false; updated = true; }
+                    if(rkey==KeyEvent.VK_UP)   { menuselect = (menuselect + 3) % 4; menuabout = false; menumap = false; updated = true; }
+                    if(rkey==KeyEvent.VK_DOWN) { menuselect = (menuselect + 1) % 4; menuabout = false; menumap = false; updated = true; }
+                    if(menuselect == 2) { loadMap(); }
+                    if(menuselect == 1) { showAbout(); }
+                        if(rkey==KeyEvent.VK_ENTER){
                         switch (menuselect){
                             case 0: { startGame(); break; }
-                            case 1: { showAbout(); break; }
-                            case 2: { loadMap(); break; }
                             case 3: { System.exit(0); break; }
                         }
                     }
 
                 }
                 else {
-                    if(rkey==KeyEvent.VK_LEFT) px--;
-                    if(rkey==KeyEvent.VK_RIGHT) px++;
-                    if(rkey==KeyEvent.VK_UP) py--;
-                    if(rkey==KeyEvent.VK_DOWN) py++;
+                    if(rkey==KeyEvent.VK_LEFT) { px--; updated = true; }
+                    if(rkey==KeyEvent.VK_RIGHT){ px++; updated = true; }
+                    if(rkey==KeyEvent.VK_UP)   { py--; updated = true; }
+                    if(rkey==KeyEvent.VK_DOWN) { py++; updated = true; }
 
                     char rckey=(char)rkey;
                     //        left          right          up            down
