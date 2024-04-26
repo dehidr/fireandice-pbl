@@ -2,7 +2,18 @@ import java.io.File;
 import java.util.Scanner;
 
 public class GameField {
+
     private static GameField field = null;
+    public  static Player player = Player.getInstance();
+
+    public static void move(Player.Direction dir){
+        switch (dir){
+            case UP     -> { if(map[player.getY()-1][player.getX()] != '#'){ player.move(dir); break; } }
+            case DOWN   -> { if(map[player.getY()+1][player.getX()] != '#'){ player.move(dir); break; } }
+            case LEFT   -> { if(map[player.getY()][player.getX()-1] != '#'){ player.move(dir); break; } }
+            case RIGHT  -> { if(map[player.getY()][player.getX()+1] != '#'){ player.move(dir); break; } }
+        }
+    }
 
     private static char[][] map = new char[23][53];
 

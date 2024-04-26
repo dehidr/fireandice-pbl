@@ -1,4 +1,12 @@
 class Player {
+
+    public enum Direction {
+        LEFT,
+        RIGHT,
+        UP,
+        DOWN
+    }
+
     private int x;
     private int y;
 
@@ -8,7 +16,7 @@ class Player {
 
     public static Player getInstance(){
         if(player == null){
-            player = new Player(0,0,1000);
+            player = new Player(1,1,1000);
         }
         return player;
     }
@@ -26,10 +34,20 @@ class Player {
     public int getX() { return x; }
     public int getY() { return y; }
 
-    public void moveUp(){ y++; }
-    public void moveDown(){ y--; }
-    public void moveLeft(){ x--; }
-    public void moveRight(){ x++; }
+    public void move(Direction dir){
+        switch (dir){
+            case UP     : { y--; break; }
+            case DOWN   : { y++; break; }
+            case LEFT   : { x--; break; }
+            case RIGHT  : { x++; break; }
+        }
+    }
+    /*
+    public void moveUp()    { y++; }
+    public void moveDown()  { y--; }
+    public void moveLeft()  { x--; }
+    public void moveRight() { x++; }
+    */
 
     public int getLife() { return life; }
 
