@@ -2,6 +2,7 @@ import java.io.File;
 import java.util.Scanner;
 
 public class GameField {
+    private static GameField field = null;
 
     private static char[][] map = new char[23][53];
 
@@ -9,9 +10,16 @@ public class GameField {
         return loaded;
     }
 
+    public static synchronized GameField getInstance(){
+        if(field == null){
+            field = new GameField();
+        }
+        return field;
+    }
+
     private boolean loaded = false;
 
-    public GameField(){
+    private GameField(){
         importMap();
     }
 

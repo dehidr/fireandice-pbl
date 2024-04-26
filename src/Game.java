@@ -7,11 +7,13 @@ import enigma.console.TextAttributes;
 import java.awt.Color;
 
 public class Game {
-    public enigma.console.Console cn = Enigma.getConsole("Mouse and Keyboard", 120,37);
+    public enigma.console.Console cn = Enigma.getConsole("Mouse and Keyboard", 120,37, 18,1);
     public TextMouseListener tmlis;
     public KeyListener klis;
 
-    GameField map = new GameField();
+    GameField map = GameField.getInstance();
+    Player player = Player.getInstance();
+
 
     private TextAttributes red      = new TextAttributes(Color.WHITE, Color.RED);
     private TextAttributes green    = new TextAttributes(Color.WHITE, Color.GREEN);
@@ -208,7 +210,14 @@ public class Game {
                 }
             }
             //drawBox( 5,34,3,30,"menuselect : " + menuselect);
-            if(updated && !menu) { refresh(); drawBox(31,7,25,57); drawMap(33,8); updated = false;}
+            if(updated && !menu) {
+                refresh();
+                drawBox(31,7,25,57);
+                drawMap(33,8);
+                drawBox(5,7,25,25);
+                drawBox(89,7,25,25);
+                drawBox(5,2,5,109);
+                updated = false;}
 
 
 
