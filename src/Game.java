@@ -8,7 +8,7 @@ import java.awt.Color;
 
 public class Game {
 
-    public enigma.console.Console cn = Enigma.getConsole("Mouse and Keyboard", 120,37, 18,1);
+    public enigma.console.Console cn = Enigma.getConsole("Mouse and Keyboard", 120,37, 18,0);
     public TextMouseListener tmlis;
     public KeyListener klis;
 
@@ -41,7 +41,11 @@ public class Game {
     public int menuselect = 0;
     // ----------------------------------------------------
 
-    public void timer() { timer = (timer + 1) % 256; animationtimer = (animationtimer + 1) % 17; }
+    public void timer() {
+        timer = (timer + 1) % 256;
+        animationtimer = (animationtimer + 1) % 17;
+    }
+
     public void refresh(){
         int rows = cn.getTextWindow().getRows();
         int cols = cn.getTextWindow().getColumns();
@@ -71,13 +75,45 @@ public class Game {
         }
     }
 
+    public void moveNPCs(){
+        int plx = map.player.getX();
+        int ply = map.player.getY();
+
+        for(int i = 0; i < map.npcs.length; i++){
+            if(!map.npcs[i].isStuck()){
+                if(map.npcs[i].getX() < plx)      { map.npcs[i].setStuck(map.move(map.npcs[i],Character.Direction.RIGHT)); }
+                else if(map.npcs[i].getX() > plx) { map.npcs[i].setStuck(map.move(map.npcs[i], Character.Direction.LEFT)); }
+                else if(map.npcs[i].getY() < ply) { map.npcs[i].setStuck(map.move(map.npcs[i], Character.Direction.DOWN)); }
+                else if(map.npcs[i].getY() > ply) { map.npcs[i].setStuck(map.move(map.npcs[i], Character.Direction.UP));   }
+                else {map.npcs[i].setStuck(true);}
+            } else if(map.npcs[i].isStuck()) {
+                if(map.npcs[i].getY() < ply)      { map.npcs[i].setStuck(map.move(map.npcs[i], Character.Direction.DOWN)); }
+                else if(map.npcs[i].getY() > ply) { map.npcs[i].setStuck(map.move(map.npcs[i], Character.Direction.UP));   }
+                else if(map.npcs[i].getX() < plx) { map.npcs[i].setStuck(map.move(map.npcs[i], Character.Direction.RIGHT));}
+                else if(map.npcs[i].getX() > plx) { map.npcs[i].setStuck(map.move(map.npcs[i], Character.Direction.LEFT)); }
+                else { map.npcs[i].setStuck(true); }
+            }
+        }
+    }
+
+    public void drawPlayer(int x, int y){
+        cn.getTextWindow().output(x + map.player.getX() ,y + map.player.getY() , 'P');
+    }
+
+    public void drawNPCs(int x, int y){
+        for(int i = 0; i < map.npcs.length; i++){
+            cn.getTextWindow().output(x + map.npcs[i].getX() ,y + map.npcs[i].getY() , 'C');
+
+        }
+    }
+
     public void drawMap(int x, int y){
         for(int i = 0; i < 53; i++){
             for(int j = 0; j < 23;j++){
                 cn.getTextWindow().output(x + i ,y + j , map.getMap()[j][i]);
-                if(!menu && (map.player.getX() == i && map.player.getY() == j)){ cn.getTextWindow().output(x + i ,y + j , 'P'); }
             }
         }
+        if(!menu){ drawPlayer(x,y); drawNPCs(x,y); }
     }
 
     public void startGame(){
@@ -194,8 +230,8 @@ public class Game {
         while(true) {
             if(updated){ refresh(); }
             if (menu) {
-                if(updated) { drawMenu(5,5); }
                 drawAnimation(5 + 2,5+10, animationtimer + 46);
+                if(updated) { drawMenu(5,5); }
                 updated = false;
                 if(menumap){
                     drawEmpty(31,7,25,57);
@@ -210,14 +246,18 @@ public class Game {
                 }
             }
             //drawBox( 5,34,3,30,"menuselect : " + menuselect);
-            if(updated && !menu) {
-                refresh();
-                drawBox(31,7,25,57,map.player.getX()+" , " + map.player.getY());
-                drawMap(33,8);
-                drawBox(5,7,25,25,map.player.getX()+" , " + map.player.getY());
-                drawBox(89,7,25,25);
-                drawBox(5,2,5,109);
-                updated = false;}
+            if(!menu) {
+                if(timer % 4 == 0) { moveNPCs(); updated = true;}
+                    if(updated){
+                        refresh();
+                        drawBox(31,7,25,57);
+                        drawMap(33,8);
+                        drawBox(5,7,25,25,"(" +map.player.getX()+" , " + map.player.getY() +"), " + map.randomInput());
+                        drawBox(89,7,25,25);
+                        drawBox(5,2,5,109);
+                        updated = false;
+                    }
+            }
 
 
 
@@ -244,10 +284,10 @@ public class Game {
 
                 }
                 else {
-                    if(rkey==KeyEvent.VK_LEFT ||rkey==KeyEvent.VK_W){ map.move(Player.Direction.LEFT);  updated = true; }
-                    if(rkey==KeyEvent.VK_RIGHT||rkey==KeyEvent.VK_A){ map.move(Player.Direction.RIGHT); updated = true; }
-                    if(rkey==KeyEvent.VK_UP   ||rkey==KeyEvent.VK_S){ map.move(Player.Direction.UP);    updated = true; }
-                    if(rkey==KeyEvent.VK_DOWN ||rkey==KeyEvent.VK_D){ map.move(Player.Direction.DOWN);  updated = true; }
+                    if(rkey==KeyEvent.VK_LEFT ||rkey==KeyEvent.VK_A){ map.move(Character.Direction.LEFT);  updated = true; }
+                    if(rkey==KeyEvent.VK_RIGHT||rkey==KeyEvent.VK_D){ map.move(Character.Direction.RIGHT); updated = true; }
+                    if(rkey==KeyEvent.VK_UP   ||rkey==KeyEvent.VK_W){ map.move(Character.Direction.UP);    updated = true; }
+                    if(rkey==KeyEvent.VK_DOWN ||rkey==KeyEvent.VK_S){ map.move(Character.Direction.DOWN);  updated = true; }
 
                     char rckey=(char)rkey;
                     //        left          right          up            down
