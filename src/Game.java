@@ -35,7 +35,7 @@ public class Game {
 	private Color CatppuccinMantle      = new Color(24, 24, 37);
 	private Color CatppuccinCrust       = new Color(17, 17, 27);
 
-    public enigma.console.Console cn = Enigma.getConsole("Mouse and Keyboard", 120,37, 18,0);
+    public enigma.console.Console cn = Enigma.getConsole("Mouse and Keyboard", 120,37, 18,1);
     public TextMouseListener tmlis;
     public KeyListener klis;
 
@@ -286,12 +286,20 @@ public class Game {
     }
     public void drawBox(int x, int y, int length, int width, String text,TextAttributes textC, TextAttributes box){
         color = box;
+        String[] par = text.split("\n");
         drawBox(x, y, length, width);
-        int offx = (width - text.length() + 1)/2;
-        int offy = (length - length%2)/2;
-        cn.getTextWindow().setCursorPosition(x + offx, y + offy);
+
         color = textC;
-        cn.getTextWindow().output(text, color);
+            for(int i = 0 ; i < par.length; i++){
+                try {
+                    if(par[i].charAt(0) == '[') { color = new TextAttributes(CatppuccinBase, CatppuccinRed);}
+                }catch (Exception E){}
+                int offx = (width - par[i].length() + 1)/2;
+                int offy = (length - par.length- (length)%2)/2;
+                cn.getTextWindow().setCursorPosition(x + offx, y + offy + i + 1);
+                cn.getTextWindow().output(par[i], color);
+                color = textC;
+            }
     }
     Game() throws Exception {   // --- Contructor
 
@@ -346,8 +354,29 @@ public class Game {
                 }
                 if(menuabout){
                     color = red;
+                    String desc = "try to collect more points than the opponent.\n" +
+                                  "escape from the fire (-) and throw ice (+) at\n" +
+                                  "the opponent                                 \n" +
+                                  " \n" +
+                                  "[ c o n t r o l s ]\n" +
+                                  "> you can move with WASD or the arrow keys.  \n" +
+                                  "> you can throw ice with spacebar.           \n" +
+                                  "> you can enable the developer mode with J   \n" +
+                                  "> you can quit with Q                        \n" +
+                                  "\n" +
+                                  "[ c r e d i t s ]\n" +
+                                  "> logo created with figlet using             \n" +
+                                  "  github.com/xero/figlet-fonts               \n" +
+                                  "> animation created by aem1k with javascript \n" +
+                                  "  aem1k.com/fire/                            \n" +
+                                  " \n" +
+                                  " \n" +
+                                  " \n" +
+                                  " \n" +
+                                  " \n" +
+                                  "... \n";
                     drawEmpty(31,4,27,57);
-                    drawBox(31,7,25,57, "this is a game description",white,red);
+                    drawBox(31,7,25,57, desc ,white,red);
                     drawBox(31,4,3,57, " a b o u t ",new TextAttributes(CatppuccinBase,CatppuccinRed),red);
                     color = red;
                     // drawBox(5,34, 5, 51 , map.isLoaded() ? "m a p   l o a d e d" : "f i l e   n o t   f o u n d");

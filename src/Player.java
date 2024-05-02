@@ -16,7 +16,7 @@ class Player extends Character{
 
     private Player(){
         this.coordinate = GameField.getInstance().getBlank();
-        this.life = 10;
+        this.life = 1000;
     }
 
     private Player(int initialX, int initialY, int initialLife) {
