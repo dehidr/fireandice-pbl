@@ -1,4 +1,16 @@
 public class NPC extends Character{
+    public static int score = 0;
+
+    public Coordinate getTarget() {
+        return target;
+    }
+
+    public void setTarget(Coordinate target) {
+        this.target.set(target);
+    }
+
+    Coordinate target;
+
     public boolean isStuck() {
         return stuck;
     }
@@ -7,10 +19,22 @@ public class NPC extends Character{
         this.stuck = stuck;
     }
 
+    public void score (int pts) { score += pts; }
+    public void setScore(int score) { this.score = score; }
+    public int getScore() { return score; }
+
     boolean stuck = false;
-    public NPC(int initialX, int initialY, int initialLife) {
-        this.x = initialX;
-        this.y = initialY;
+
+    public NPC(){
+        setCoordinate( GameField.getInstance().getBlank() );
+        this.life    = 1000;
+        target = new Coordinate(coordinate);
+    }
+
+    public NPC(Coordinate c, int initialLife) {
+        setCoordinate(c);
         this.life = initialLife;
+        target = new Coordinate(coordinate);
+
     }
 }

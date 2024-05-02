@@ -1,4 +1,4 @@
-public abstract class Character {
+public abstract class Character extends GameObject {
     public enum Direction {
         LEFT,
         RIGHT,
@@ -6,36 +6,40 @@ public abstract class Character {
         DOWN
     }
 
-    protected int x;
-    protected int y;
+    public Direction getDirection() {
+        return direction;
+    }
 
+    public void setDirection(Direction direction) {
+        this.direction = direction;
+    }
+
+    Direction direction;
     protected int life;
     protected int score;
 
-    public void setScore(int score) { this.score = score; }
-    public void setLife(int life) { this.life = life; }
-    public void setY(int y) { this.y = y; }
-    public void setX(int x) { this.x = x; }
+    public void setLife(int life)   { this.life = life; }
 
     public int getScore() { return score; }
-    public int getLife() { return life; }
-    public int getX() { return x; }
-    public int getY() { return y; }
+    public int getLife()  { return life; }
 
     public void damage(int dmg) { life  -= dmg; }
-    public void score (int pts) { score += pts; }
+
+    public int getX(){ return coordinate.getX(); }
+    public int getY(){ return coordinate.getY(); }
 
     public void move(Direction dir){
         switch (dir){
-            case UP     : { y--; break; }
-            case DOWN   : { y++; break; }
-            case LEFT   : { x--; break; }
-            case RIGHT  : { x++; break; }
+            case UP     : { coordinate.moveUp(); break; }
+            case DOWN   : { coordinate.moveDown(); break; }
+            case LEFT   : { coordinate.moveLeft(); break; }
+            case RIGHT  : { coordinate.moveRight(); break; }
         }
     }
 
-    public void moveUp()    { y--; }
-    public void moveDown()  { y++; }
-    public void moveLeft()  { x--; }
-    public void moveRight() { x++; }
+
+    public void moveUp()    { coordinate.moveUp()   ; }
+    public void moveDown()  { coordinate.moveDown() ; }
+    public void moveLeft()  { coordinate.moveLeft() ; }
+    public void moveRight() { coordinate.moveRight(); }
 }
