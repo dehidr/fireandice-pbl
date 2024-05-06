@@ -166,7 +166,7 @@ public class Game {
                         case SCORE1 -> color = new TextAttributes(CatppuccinYellow,CatppuccinBase);
                         case SCORE2 -> color = new TextAttributes(CatppuccinYellow,CatppuccinBase);
                         case SCORE3 -> color = new TextAttributes(CatppuccinYellow,CatppuccinBase);
-                        case FIRE -> color = new TextAttributes(CatppuccinPeach,CatppuccinBase);
+                        case FIRE -> { color = new TextAttributes(CatppuccinPeach,CatppuccinBase);if(timer == 1 || timer == 40 ) { map.spreadFire(GameField.objects[i][j]) ;updated=true;}}
                         case ICE -> color = new TextAttributes(CatppuccinSky,CatppuccinBase);
                         case PACKEDICE -> color = new TextAttributes(CatppuccinSapphire,CatppuccinBase);
                     }

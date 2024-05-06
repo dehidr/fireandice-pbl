@@ -122,6 +122,11 @@ public class GameField {
         objects[g.getY()-1][g.getX()-1] = g;
     }
 
+
+    public void removeObject(GameObject g){
+        objects[g.getY()-1][g.getX()-1] = null;
+    }
+
     public void addNPC(GameObject npc){
         if(npc.getType() == GameObject.Type.NPC){
             npcs[npcCtr] = new NPC(npc.getCoordinate(),1000);
@@ -142,6 +147,7 @@ public class GameField {
         try {
             switch (input[0].getType()){
                 case NPC -> { addNPC(input[0]);}
+                case FIRE -> { addObject(input[0]); }
                 default -> { addObject(input[0]); }
             }
         }
@@ -178,6 +184,25 @@ public class GameField {
         }
 
         return new Coordinate(x,y);
+    }
+
+    public void addFire(Coordinate loc, int health){
+        addObject(new GameObject(loc, GameObject.Type.FIRE, health));
+    }
+
+    public void spreadFire(GameObject fire){
+        if(fire.getType() == GameObject.Type.FIRE){
+
+            if(fire.health <= 0){
+                removeObject(fire);
+            }else {
+                if( map[fire.getY()-1][fire.getX()  ] != '#' ){ addFire(new GameObject(fire.getCoordinate().getUp()   , fire.getHealth()-1)); }
+                if( map[fire.getY()+1][fire.getX()  ] != '#' ){ addFire(new GameObject(fire.getCoordinate().getDown() , fire.getHealth()-1)); }
+                if( map[fire.getY()  ][fire.getX()-1] != '#' ){ addFire(new GameObject(fire.getCoordinate().getLeft() , fire.getHealth()-1)); }
+                if( map[fire.getY()  ][fire.getX()+1] != '#' ){ addFire(new GameObject(fire.getCoordinate().getRight(), fire.getHealth()-1)); }
+                removeObject(fire);
+            }
+        }
     }
 
     public Coordinate getNearestScore(Coordinate c){

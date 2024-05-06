@@ -32,6 +32,11 @@ public class Coordinate {
     public void moveLeft()  { x--; }
     public void moveRight() { x++; }
 
+    public Coordinate getUp()    { return new Coordinate(x, y-1); }
+    public Coordinate getDown()  { return new Coordinate(x, y+1); }
+    public Coordinate getLeft()  { return new Coordinate(x-1, y); }
+    public Coordinate getRight() { return new Coordinate(x+1, y); }
+
     public String  toString(){
         return "(" + x + ", " + y + ")";
     }
