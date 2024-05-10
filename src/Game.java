@@ -35,13 +35,13 @@ public class Game {
 	private Color CatppuccinMantle      = new Color(24, 24, 37);
 	private Color CatppuccinCrust       = new Color(17, 17, 27);
 
-    public enigma.console.Console cn = Enigma.getConsole("Mouse and Keyboard", 120,37, 18,1);
+    public enigma.console.Console cn = Enigma.getConsole("[ f i r e   a n d   i c e ]", 120,37, 18,1);
     public TextMouseListener tmlis;
     public KeyListener klis;
 
     GameField map = GameField.getInstance();
     //private TextAttributes wall = new TextAttributes(CatppuccinOverlay2,CatppuccinSubtext1);
-    private TextAttributes wall = new TextAttributes(CatppuccinRed,CatppuccinRosewater);
+    private TextAttributes wall = new TextAttributes(CatppuccinRosewater, CatppuccinOverlay2);
     private TextAttributes red      = new TextAttributes(CatppuccinRed, CatppuccinBase);
     private TextAttributes black    = new TextAttributes(CatppuccinText, CatppuccinBase);
     private TextAttributes white    = new TextAttributes(CatppuccinText, CatppuccinBase);
@@ -58,7 +58,11 @@ public class Game {
     };
 
     //char wallChar = '▞';
+    boolean isWindows = false;
     char wallChar = '▀';
+    char playerChar = '▀';
+    char npcChar = '▀';
+    char[] boxChars = "─│╭╮╰╯".toCharArray(); //
 
 
     // ------ Standard variables for mouse and keyboard ------
@@ -148,14 +152,53 @@ public class Game {
     }
 
     public void drawPlayer(int x, int y){
-        cn.getTextWindow().output(x + GameField.player.getX() ,y + GameField.player.getY() , '▀', new TextAttributes(CatppuccinBlue, CatppuccinSky));
+        /*
+        if(playerChar == '▀'){
+            playerChar = '▄';
+        }else{
+            playerChar = '▀';
+        }
+        */
+        //char playerChar = '🯅';
+        //char playerChar = java.lang.Character.;
+        cn.getTextWindow().output(x + GameField.player.getX() ,y + GameField.player.getY() , playerChar, new TextAttributes(CatppuccinSky, CatppuccinBlue));
     }
 
     public void drawNPCs(int x, int y){
+        /*
+        if(timer % 2 == 1){
+            npcChar = '▌';
+        }else{
+            npcChar = '▐';
+        }*/
         for(int i = 0; i < map.npcCtr; i++){
-            cn.getTextWindow().output(x + GameField.npcs[i].getX() ,y + GameField.npcs[i].getY() , 'C', new TextAttributes(CatppuccinBase,CatppuccinRed));
+            cn.getTextWindow().output(x + GameField.npcs[i].getX() ,y + GameField.npcs[i].getY() , npcChar, new TextAttributes(CatppuccinRed,CatppuccinPeach));
 
         }
+    }
+
+    public void fireSpread(){
+        for(int i = 0; i < GameField.fireCtr; i++){
+            try {
+                color = new TextAttributes(CatppuccinPeach,CatppuccinBase);
+                if(timer == 1 || timer == 40 ) { GameField.getInstance().spreadFire(GameField.fire[i], i); GameField.fire[i].fightFire(); }; updated=true;
+            }
+            catch(Exception e){
+            }
+        }
+        color = white;
+    }
+
+    public void drawFire(int x, int y){
+        for(int i = 0; i < GameField.fireCtr; i++){
+            try {
+                color = new TextAttributes(CatppuccinPeach,CatppuccinBase);
+                cn.getTextWindow().output(x + GameField.fire[i].getX() ,y + GameField.fire[i].getY() , GameField.fire[i].toString().charAt(0),color);
+            }
+            catch(Exception e){
+            }
+        }
+        color = white;
     }
 
     public void drawObjects(int x, int y){
@@ -166,7 +209,7 @@ public class Game {
                         case SCORE1 -> color = new TextAttributes(CatppuccinYellow,CatppuccinBase);
                         case SCORE2 -> color = new TextAttributes(CatppuccinYellow,CatppuccinBase);
                         case SCORE3 -> color = new TextAttributes(CatppuccinYellow,CatppuccinBase);
-                        case FIRE -> { color = new TextAttributes(CatppuccinPeach,CatppuccinBase);if(timer == 1 || timer == 40 ) { map.spreadFire(GameField.objects[i][j]) ;updated=true;}}
+                        case FIRE -> { color = new TextAttributes(CatppuccinPeach,CatppuccinBase); } //map.spreadFire(GameField.objects[i][j]); if(timer == 1 || timer == 40 ) { GameField.objects[i][j].fightFire(); }; updated=true; }
                         case ICE -> color = new TextAttributes(CatppuccinSky,CatppuccinBase);
                         case PACKEDICE -> color = new TextAttributes(CatppuccinSapphire,CatppuccinBase);
                     }
@@ -177,16 +220,21 @@ public class Game {
         }
     }
     public void drawMap(int x, int y){
+        char tmp = wallChar;
         for(int i = 0; i < 53; i++){
             for(int j = 0; j < 23;j++){
                 if(j < 22){
-                    if(map.getMap()[j+1][i]=='#'){wallChar = '█';}
-                    else wallChar = '▀';
+
+                        if(map.getMap()[j+1][i]=='#'){tmp = '█';}
+                        else tmp = '▀';
+
                 }
+                if(isWindows){ tmp = '#';}
                 if(map.getMap()[j][i]=='#'){color = wall;}
-                cn.getTextWindow().output(x + i ,y + j , map.getMap()[j][i]=='#' ? wallChar : map.getMap()[j][i],color);
+                cn.getTextWindow().output(x + i ,y + j , map.getMap()[j][i]=='#' ? tmp : map.getMap()[j][i],color);
                 color = white;
-                wallChar = '▀';
+                tmp = '▀';
+                if(isWindows) {tmp = '#';}
             }
         }
         if(!menu){ drawPlayer(x,y); drawNPCs(x,y); drawObjects(x,y); }
@@ -201,6 +249,23 @@ public class Game {
                 cn.getTextWindow().output(x + 2 + i ,y +j , logo[j][i],color);
             }
         }
+    }
+
+    public void winChars(){
+        if(isWindows){
+            npcChar = 'C';
+            wallChar = '#';
+            playerChar = 'P';
+            boxChars = "-|++++".toCharArray();
+        }
+        else {
+            wallChar = '▀';
+            playerChar = '▀';
+            npcChar = '▀';
+            boxChars = "─│╭╮╰╯".toCharArray(); //
+        }
+        updated = true;
+        refresh();
     }
 
     public void startGame(){
@@ -225,7 +290,7 @@ public class Game {
 
         drawBox(x, y - 2 , 11,109);
         drawBox(x, y + 9, 20,33);
-        drawBox(x + 34, y + 9, 5,75,"g a m e   o v e r",new TextAttributes(CatppuccinPeach,CatppuccinBase),new TextAttributes(CatppuccinPeach,CatppuccinBase));
+        drawBox(x + 34, y + 9, 5,75," [ g a m e   o v e r ] ",new TextAttributes(CatppuccinPeach,CatppuccinBase),new TextAttributes(CatppuccinPeach,CatppuccinBase));
 
     }
     public void drawMenu(int x, int y){
@@ -242,25 +307,25 @@ public class Game {
             text = new TextAttributes(CatppuccinBase,CatppuccinRed);
             box = new TextAttributes(CatppuccinRed,CatppuccinBase);
         }
-        drawBox(x + 34, y + 9, 5,75," s t a r t ",text,box);
+        drawBox(x + 34, y + 9, 5,75," [ s t a r t ] ",text,box);
         text = white; box  = white;
 
         if(menuselect == 1) {
             text = new TextAttributes(CatppuccinBase,CatppuccinRed);
             box = new TextAttributes(CatppuccinRed,CatppuccinBase);
-        }        drawBox(x + 34, y + 14, 5,75," a b o u t ",text,box);
+        }        drawBox(x + 34, y + 14, 5,75," [ a b o u t ] ",text,box);
         text = white; box  = white;
 
         if(menuselect == 2) {
             text = new TextAttributes(CatppuccinBase,CatppuccinRed);
             box = new TextAttributes(CatppuccinRed,CatppuccinBase);
-        }        drawBox(x + 34, y + 19, 5,75, map.isLoaded() ? " m a p   l o a d e d " : " m a p   n o t   f o u n d ",text,box);
+        }        drawBox(x + 34, y + 19, 5,75, map.isLoaded() ? " [ m a p   l o a d e d ] " : " [ m a p   n o t   f o u n d ] ",text,box);
         text = white; box  = white;
 
         if(menuselect == 3) {
             text = new TextAttributes(CatppuccinBase,CatppuccinRed);
             box = new TextAttributes(CatppuccinRed,CatppuccinBase);
-        }        drawBox(x + 34, y + 24, 5,75," q u i t ",text,box);
+        }        drawBox(x + 34, y + 24, 5,75," [ q u i t ] ",text,box);
         text = white; box  = white;
 
         //drawAnimation(x + 2,y+10, animationtimer + 46);
@@ -272,18 +337,21 @@ public class Game {
       │             │
       │             │
       ╰─────────────╯
+          char[] boxChars = "─│╭╮╰╯".toCharArray(); //
        */
         for(int i = 0 ; i < length ; i++){
             if(i == 0 || i == length - 1){
-                for(int j = 0 ; j < width; j++) { cn.getTextWindow().output( x + j , y + i , '─' , color); }
+                for(int j = 0 ; j < width; j++) { cn.getTextWindow().output( x + j , y + i , boxChars[0] , color); }
             }
-            if( i > 0 && i < length - 1 ) { cn.getTextWindow().output( x + 0 , y + i , '│' , color); cn.getTextWindow().output( x + width - 1 , y + i , '│' , color); }
+            if( i > 0 && i < length - 1 ) { cn.getTextWindow().output( x + 0 , y + i , boxChars[1] , color); cn.getTextWindow().output( x + width - 1 , y + i , '│' , color); }
         }
-        cn.getTextWindow().output( x , y , '╭' , color);
-        cn.getTextWindow().output( x + width - 1, y , '╮' , color);
-        cn.getTextWindow().output( x , y + length - 1 , '╰' , color);
-        cn.getTextWindow().output( x + width - 1, y + length - 1 , '╯' , color);
+        cn.getTextWindow().output( x , y , boxChars[2], color);
+        cn.getTextWindow().output( x + width - 1, y , boxChars[3] , color);
+        cn.getTextWindow().output( x , y + length - 1 , boxChars[4] , color);
+        cn.getTextWindow().output( x + width - 1, y + length - 1 , boxChars[5] , color);
     }
+
+
     public void drawBox(int x, int y, int length, int width, String text,TextAttributes textC, TextAttributes box){
         color = box;
         String[] par = text.split("\n");
@@ -336,16 +404,18 @@ public class Game {
 
         while(true) {
             if(updated){ refresh(); }
+            if(debug){
+                drawBox(5,0,3,109, "[ d e v   m o d e   a c t i v a t e d ]"  ,new TextAttributes(CatppuccinBase,CatppuccinRed),red);
+                color = white;
+            }
             if (menu) {
-                if(debug){
-                    drawBox(5,0,3,109, " d e v   m o d e   a c t i v a t e d "  ,new TextAttributes(CatppuccinBase,CatppuccinRed),red);
-                }
+
                 drawAnimation(5 + 2,5+10, animationtimer + 46);
                 if(updated) { drawMenu(5,5); }
                 updated = false;
                 if(menumap){
                     drawEmpty(31,4,27,57);
-                    drawBox(31,4,3,57, map.isLoaded() ? " m a p   l o a d e d " : " m a p   n o t   f o u n d " ,new TextAttributes(CatppuccinBase,CatppuccinRed),red);
+                    drawBox(31,4,3,57, map.isLoaded() ? "[ m a p   l o a d e d ]" : "[ m a p   n o t   f o u n d ]" ,new TextAttributes(CatppuccinBase,CatppuccinRed),red);
                     color = red;
                     drawBox(31,7,25,57);
                     drawMap(33,8);
@@ -354,36 +424,37 @@ public class Game {
                 }
                 if(menuabout){
                     color = red;
-                    String desc = "try to collect more points than the opponent.\n" +
-                                  "escape from the fire (-) and throw ice (+) at\n" +
-                                  "the opponent                                 \n" +
-                                  " \n" +
-                                  "[ c o n t r o l s ]\n" +
-                                  "> you can move with WASD or the arrow keys.  \n" +
-                                  "> you can throw ice with spacebar.           \n" +
-                                  "> you can enable the developer mode with J   \n" +
-                                  "> you can quit with Q                        \n" +
-                                  "\n" +
-                                  "[ c r e d i t s ]\n" +
-                                  "> logo created with figlet using             \n" +
-                                  "  github.com/xero/figlet-fonts               \n" +
-                                  "> animation created by aem1k with javascript \n" +
-                                  "  aem1k.com/fire/                            \n" +
-                                  " \n" +
-                                  " \n" +
-                                  " \n" +
-                                  " \n" +
+                            String desc = "try to collect more points than the opponent.\n" +
+                                    "escape from the fire (-) and throw ice (+) at\n" +
+                                    "the opponent                                 \n" +
+                                    " \n" +
+                                    "[ c o n t r o l s ]\n" +
+                                    " \n" +
+                                    "> you can move with WASD or the arrow keys.  \n" +
+                                    "> you can throw ice with spacebar.           \n" +
+                                    "> you can enable the developer mode with J   \n" +
+                                    "> while in dev mode summon packed ice, fire, \n" +
+                                    "  points and robots with RTFG                \n" +
+                                    "> you can quit with Q                        \n" +
+                                    "\n" +
+                                    "[ c r e d i t s ]\n" +
+                                    " \n" +
+                                    "> logo created with figlet using             \n" +
+                                    "  github.com/xero/figlet-fonts               \n" +
+                                    "> animation created by aem1k with javascript \n" +
+                                    "  aem1k.com/fire/                            \n" +
                                   " \n" +
                                   "... \n";
                     drawEmpty(31,4,27,57);
                     drawBox(31,7,25,57, desc ,white,red);
-                    drawBox(31,4,3,57, " a b o u t ",new TextAttributes(CatppuccinBase,CatppuccinRed),red);
+                    drawBox(31,4,3,57, "[ a b o u t ]",new TextAttributes(CatppuccinBase,CatppuccinRed),red);
                     color = red;
                     // drawBox(5,34, 5, 51 , map.isLoaded() ? "m a p   l o a d e d" : "f i l e   n o t   f o u n d");
                 }
             }
             //drawBox( 5,34,3,30,"menuselect : " + menuselect);
             if(!menu) {
+                fireSpread();
                 if(GameField.objects[GameField.player.getY()-1][GameField.player.getX()-1] != null){
                     switch (GameField.objects[GameField.player.getY()-1][GameField.player.getX()-1].getType()){
                         case SCORE1 -> GameField.player.score(3);
@@ -401,13 +472,13 @@ public class Game {
 
                     drawBox(31,7,25,57);
                         drawMap(33,8);
-
+                        drawFire(33,8);
                         drawBox(5,7,25,25,GameField.player.getCoordinate().toString() + " " + map.getNearestScore(GameField.player.getCoordinate()).toString(),white,red);
                         drawBox(89,7,25,25,  GameField.player.getLife() + " " + GameField.player.getScore(),white,red);
-                        drawBox(5,2,5,109, map.queueToString(),white,red);
+                        //drawBox(5,2,5,109, map.queueToString(),white,red);
                     color = red;
 
-                    drawBox(48,3,3,23);
+                    drawBox(48,3,3,23, map.queueToString(),white,red);
                     color = white;
 
                     updated = false;
@@ -461,6 +532,7 @@ public class Game {
 
                 }
                 if(rkey==KeyEvent.VK_J) { debug = !debug; updated = true; }
+                if(rkey==KeyEvent.VK_Y) {  isWindows = !isWindows; winChars();}
                 if(rkey==KeyEvent.VK_Q){ System.exit(0); }
                 keypr=0;
             }

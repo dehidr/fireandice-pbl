@@ -9,24 +9,6 @@ public class GameObject {
         NPC
     }
 
-    public int getHealth() {
-        return health;
-    }
-
-    public void setHealth(int health) {
-        this.health = health;
-    }
-
-    int health = 3;
-
-    public void fightFire(){
-        if(this.type.equals(Type.FIRE) || this.type.equals(Type.ICE)) health--;
-    }
-
-    public void fightFire(int dmg){
-        if(this.type.equals(Type.FIRE) || this.type.equals(Type.ICE)) health -= dmg;
-    }
-
     public void set(GameObject obj){
         this.type = obj.type;
         this.coordinate.set(obj.coordinate);
@@ -47,11 +29,7 @@ public class GameObject {
         this.type=t;
     }
 
-    public GameObject(Coordinate c, Type t, int health){
-        this.coordinate = c;
-        this.type=t;
-        this.health=health;
-    }
+
 
     public Coordinate getCoordinate() { return coordinate; }
     public void setCoordinate(Coordinate coordinate) { this.coordinate = new Coordinate(coordinate);}

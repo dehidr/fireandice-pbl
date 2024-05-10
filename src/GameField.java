@@ -8,8 +8,10 @@ public class GameField {
     public  static Player player    = Player.getInstance();
     public static GameObject[] input = new GameObject[10];
     public static NPC[] npcs          = new NPC[1071];// 51*21 = 1071
+    public static Fire[] fire = new Fire[1071];
     public static GameObject[][] objects          = new GameObject[21][51];
-    int npcCtr = 0;
+    public static int npcCtr = 0;
+    public static int fireCtr = 0;
 
     public static void move(Character.Direction dir){
         switch (dir){
@@ -186,23 +188,41 @@ public class GameField {
         return new Coordinate(x,y);
     }
 
-    public void addFire(Coordinate loc, int health){
-        addObject(new GameObject(loc, GameObject.Type.FIRE, health));
+    public Boolean checkFire(Coordinate loc){
+        return objects[loc.getY()-1][loc.getX()-1].getType() == GameObject.Type.FIRE;
     }
 
-    public void spreadFire(GameObject fire){
-        if(fire.getType() == GameObject.Type.FIRE){
+    public void addFire(Coordinate loc, int health, int spread){
+        fire[fireCtr] = new Fire(loc,health,spread);
+        fireCtr++;
+        addObject(fire[fireCtr]);
+    }
 
-            if(fire.health <= 0){
-                removeObject(fire);
-            }else {
-                if( map[fire.getY()-1][fire.getX()  ] != '#' ){ addFire(new GameObject(fire.getCoordinate().getUp()   , fire.getHealth()-1)); }
-                if( map[fire.getY()+1][fire.getX()  ] != '#' ){ addFire(new GameObject(fire.getCoordinate().getDown() , fire.getHealth()-1)); }
-                if( map[fire.getY()  ][fire.getX()-1] != '#' ){ addFire(new GameObject(fire.getCoordinate().getLeft() , fire.getHealth()-1)); }
-                if( map[fire.getY()  ][fire.getX()+1] != '#' ){ addFire(new GameObject(fire.getCoordinate().getRight(), fire.getHealth()-1)); }
-                removeObject(fire);
-            }
+    public void removeFire(int index){
+        removeObject(fire[index]);
+        fire[index] = null;
+        for(int i = index ; i < fireCtr ; i++){
+            fire[i] = fire[i+1];
         }
+        fireCtr--;
+    }
+
+    public void spreadFire(Fire fire, int index){
+            if(fire.health <= 0){
+                removeFire(index);
+            }else if(fire.getSpread() > 0){
+                if( map[fire.getY()-1][fire.getX()  ] != '#' && !checkFire(fire.getCoordinate().getUp())  ){ addFire(fire.getCoordinate().getUp()   , fire.getHealth(), fire.getSpread()-1); fireCtr++;} //
+                if( map[fire.getY()+1][fire.getX()  ] != '#' && !checkFire(fire.getCoordinate().getDown())  ){ addFire(fire.getCoordinate().getDown() , fire.getHealth(), fire.getSpread()-1); fireCtr++;} //
+                if( map[fire.getY()  ][fire.getX()-1] != '#' && !checkFire(fire.getCoordinate().getLeft())  ){ addFire(fire.getCoordinate().getLeft() , fire.getHealth(), fire.getSpread()-1); fireCtr++;} //
+                if( map[fire.getY()  ][fire.getX()+1] != '#' && !checkFire(fire.getCoordinate().getRight())  ){ addFire(fire.getCoordinate().getRight(), fire.getHealth(), fire.getSpread()-1); fireCtr++;} //
+                //fire.fightFire();
+                /*
+                * case UP     -> { if(map[c.getY()-1][c.getX()] != '#' && field.spaceAvailable(new Coordinate(c.getY()-1,c.getX()))){ c.moveUp()   ; stuck = false; break; } }
+                * case DOWN   -> { if(map[c.getY()+1][c.getX()] != '#' && field.spaceAvailable(new Coordinate(c.getY()+1,c.getX()))){ c.moveDown() ; stuck = false; break; } }
+                * case LEFT   -> { if(map[c.getY()][c.getX()-1] != '#' && field.spaceAvailable(new Coordinate(c.getY(),c.getX()-1 ))){ c.moveLeft() ; stuck = false; break; } }
+                * case RIGHT  -> { if(map[c.getY()][c.getX()+1] != '#' && field.spaceAvailable(new Coordinate(c.getY(),c.getX()+1 ))){ c.moveRight(); stuck = false; break; } }
+                * */
+            }
     }
 
     public Coordinate getNearestScore(Coordinate c){
