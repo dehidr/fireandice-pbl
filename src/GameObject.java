@@ -6,7 +6,8 @@ public class GameObject {
         PACKEDICE,
         FIRE,
         ICE,
-        NPC
+        NPC,
+        PLAYER
     }
 
     public void set(GameObject obj){
@@ -17,7 +18,8 @@ public class GameObject {
     protected Coordinate coordinate;
     Type type;
 
-    public GameObject(){}
+
+
 
     public GameObject(Type t){
         this.type = t;
@@ -28,8 +30,6 @@ public class GameObject {
         this.coordinate = c;
         this.type=t;
     }
-
-
 
     public Coordinate getCoordinate() { return coordinate; }
     public void setCoordinate(Coordinate coordinate) { this.coordinate = new Coordinate(coordinate);}

@@ -8,17 +8,17 @@ public class GameField {
     public  static Player player    = Player.getInstance();
     public static GameObject[] input = new GameObject[10];
     public static NPC[] npcs          = new NPC[1071];// 51*21 = 1071
-    public static Fire[] fire = new Fire[1071];
+    public static Fire[] fire                     = new Fire[1071];
     public static GameObject[][] objects          = new GameObject[21][51];
     public static int npcCtr = 0;
     public static int fireCtr = 0;
 
     public static void move(Character.Direction dir){
         switch (dir){
-            case UP     -> { if(map[player.getY()-1][player.getX()] != '#'){ player.move(dir); break; } }
-            case DOWN   -> { if(map[player.getY()+1][player.getX()] != '#'){ player.move(dir); break; } }
-            case LEFT   -> { if(map[player.getY()][player.getX()-1] != '#'){ player.move(dir); break; } }
-            case RIGHT  -> { if(map[player.getY()][player.getX()+1] != '#'){ player.move(dir); break; } }
+            case UP     -> { if(map[player.getY()-1][player.getX()] != '#'  ){ player.move(dir); break; } }
+            case DOWN   -> { if(map[player.getY()+1][player.getX()] != '#'  ){ player.move(dir); break; } }
+            case LEFT   -> { if(map[player.getY()  ][player.getX()-1] != '#'){ player.move(dir); break; } }
+            case RIGHT  -> { if(map[player.getY()  ][player.getX()+1] != '#'){ player.move(dir); break; } }
         }
     }
 
@@ -194,8 +194,8 @@ public class GameField {
 
     public void addFire(Coordinate loc, int health, int spread){
         fire[fireCtr] = new Fire(loc,health,spread);
-        fireCtr++;
         addObject(fire[fireCtr]);
+        fireCtr++;
     }
 
     public void removeFire(int index){
@@ -208,20 +208,20 @@ public class GameField {
     }
 
     public void spreadFire(Fire fire, int index){
-            if(fire.health <= 0){
+            if(fire.getHealth() <= 0){
                 removeFire(index);
             }else if(fire.getSpread() > 0){
-                if( map[fire.getY()-1][fire.getX()  ] != '#' && !checkFire(fire.getCoordinate().getUp())  ){ addFire(fire.getCoordinate().getUp()   , fire.getHealth(), fire.getSpread()-1); fireCtr++;} //
-                if( map[fire.getY()+1][fire.getX()  ] != '#' && !checkFire(fire.getCoordinate().getDown())  ){ addFire(fire.getCoordinate().getDown() , fire.getHealth(), fire.getSpread()-1); fireCtr++;} //
-                if( map[fire.getY()  ][fire.getX()-1] != '#' && !checkFire(fire.getCoordinate().getLeft())  ){ addFire(fire.getCoordinate().getLeft() , fire.getHealth(), fire.getSpread()-1); fireCtr++;} //
+                if( map[fire.getY()-1][fire.getX()  ] != '#' && !checkFire(fire.getCoordinate().getUp())  ){    addFire(fire.getCoordinate().getUp()   , fire.getHealth(), fire.getSpread()-1); fireCtr++;} //
+                if( map[fire.getY()+1][fire.getX()  ] != '#' && !checkFire(fire.getCoordinate().getDown())  ){  addFire(fire.getCoordinate().getDown() , fire.getHealth(), fire.getSpread()-1); fireCtr++;} //
+                if( map[fire.getY()  ][fire.getX()-1] != '#' && !checkFire(fire.getCoordinate().getLeft())  ){  addFire(fire.getCoordinate().getLeft() , fire.getHealth(), fire.getSpread()-1); fireCtr++;} //
                 if( map[fire.getY()  ][fire.getX()+1] != '#' && !checkFire(fire.getCoordinate().getRight())  ){ addFire(fire.getCoordinate().getRight(), fire.getHealth(), fire.getSpread()-1); fireCtr++;} //
                 //fire.fightFire();
                 /*
-                * case UP     -> { if(map[c.getY()-1][c.getX()] != '#' && field.spaceAvailable(new Coordinate(c.getY()-1,c.getX()))){ c.moveUp()   ; stuck = false; break; } }
-                * case DOWN   -> { if(map[c.getY()+1][c.getX()] != '#' && field.spaceAvailable(new Coordinate(c.getY()+1,c.getX()))){ c.moveDown() ; stuck = false; break; } }
-                * case LEFT   -> { if(map[c.getY()][c.getX()-1] != '#' && field.spaceAvailable(new Coordinate(c.getY(),c.getX()-1 ))){ c.moveLeft() ; stuck = false; break; } }
-                * case RIGHT  -> { if(map[c.getY()][c.getX()+1] != '#' && field.spaceAvailable(new Coordinate(c.getY(),c.getX()+1 ))){ c.moveRight(); stuck = false; break; } }
-                * */
+                 * case UP     -> { if(map[c.getY()-1][c.getX()] != '#' && field.spaceAvailable(new Coordinate(c.getY()-1,c.getX()))){ c.moveUp()   ; stuck = false; break; } }
+                 * case DOWN   -> { if(map[c.getY()+1][c.getX()] != '#' && field.spaceAvailable(new Coordinate(c.getY()+1,c.getX()))){ c.moveDown() ; stuck = false; break; } }
+                 * case LEFT   -> { if(map[c.getY()][c.getX()-1] != '#' && field.spaceAvailable(new Coordinate(c.getY(),c.getX()-1 ))){ c.moveLeft() ; stuck = false; break; } }
+                 * case RIGHT  -> { if(map[c.getY()][c.getX()+1] != '#' && field.spaceAvailable(new Coordinate(c.getY(),c.getX()+1 ))){ c.moveRight(); stuck = false; break; } }
+                 * */
             }
     }
 

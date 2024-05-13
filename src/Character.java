@@ -6,6 +6,17 @@ public abstract class Character extends GameObject {
         DOWN
     }
 
+    Direction direction;
+    protected int life;
+    protected int score;
+
+    public Character(Coordinate c, Type t, Direction direction, int life, int score) {
+        super(c, t);
+        this.direction = direction;
+        this.life = life;
+        this.score = score;
+    }
+
     public Direction getDirection() {
         return direction;
     }
@@ -13,10 +24,6 @@ public abstract class Character extends GameObject {
     public void setDirection(Direction direction) {
         this.direction = direction;
     }
-
-    Direction direction;
-    protected int life;
-    protected int score;
 
     public void setLife(int life)   { this.life = life; }
 

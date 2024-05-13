@@ -26,12 +26,14 @@ public class NPC extends Character{
     boolean stuck = false;
 
     public NPC(){
+        super(GameField.getInstance().getBlank(), Type.NPC, Direction.UP, 1000, 0);
         setCoordinate( GameField.getInstance().getBlank() );
         this.life    = 1000;
         target = new Coordinate(coordinate);
     }
 
     public NPC(Coordinate c, int initialLife) {
+        super(c, Type.NPC, Direction.UP, 1000, 0);
         setCoordinate(c);
         this.life = initialLife;
         target = new Coordinate(coordinate);
