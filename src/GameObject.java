@@ -19,8 +19,6 @@ public class GameObject {
     Type type;
 
 
-
-
     public GameObject(Type t){
         this.type = t;
         this.coordinate = GameField.getInstance().getBlank();
