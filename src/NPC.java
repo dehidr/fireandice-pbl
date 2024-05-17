@@ -1,3 +1,5 @@
+import java.util.Random;
+
 public class NPC extends Character{
     public static int score = 0;
 
@@ -25,13 +27,18 @@ public class NPC extends Character{
     }
 
     public void setStuck(boolean stuck) {
-        if(!stuck && !this.stuck){ stuckfor=0; }
-        else { stuckfor++; }
+        Random r = new Random();
+        if(!stuck && !this.stuck){
+            if(stuckfor == 0){
+                stuckfor = r.nextInt(4);
+            } else {stuckfor = 0;}
+        }
+        else { stuckfor += r.nextInt(3); }
         this.stuck = stuck;
     }
 
     public void score (int pts) { score += pts; }
-    public void setScore(int score) { this.score = score; }
+    public static void resetScore() { score = 0; }
     public int getScore() { return score; }
 
     boolean stuck = false;

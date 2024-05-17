@@ -7,6 +7,7 @@ public class Main {
     public static void restart() throws Exception {
         myGame = null;
         GameField.restart();
+        NPC.resetScore();
         System.gc();
         myGame = new Game();
     }

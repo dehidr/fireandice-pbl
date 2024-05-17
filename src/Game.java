@@ -1,6 +1,7 @@
 import enigma.core.Enigma;
 import enigma.event.TextMouseEvent;
 import enigma.event.TextMouseListener;
+import enigma.event.TextMouseMotionListener;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -40,6 +41,7 @@ public class Game {
 
     public enigma.console.Console cn = Enigma.getConsole("[ f i r e   a n d   i c e ]", 120, 37, 18, 1);
     public TextMouseListener tmlis;
+    public TextMouseMotionListener mouseListener;
     public KeyListener klis;
 
     GameField map = GameField.getInstance();
@@ -72,6 +74,7 @@ public class Game {
     // ------ Standard variables for mouse and keyboard ------
     public int mousepr;          // mouse pressed?
     public int mousex, mousey;   // mouse text coords.
+    public int motx = 0 , moty = 0;// motion coordinates
     public int keypr;   // key pressed?
     public int rkey;    // key   (for press/release)
     public boolean updated = true;
@@ -159,30 +162,35 @@ public class Game {
                 GameField.objects[GameField.npcs[i].getY() - 1][GameField.npcs[i].getX() - 1] = null;
             }
             GameField.npcs[i].setTarget(new Coordinate(GameField.getInstance().getNearestScore(GameField.npcs[i].getCoordinate())));
+            boolean moved = false;
             if(GameField.npcs[i].getStuckfor() > 2 || timer == 36 ){
                 GameField.moveRandom(GameField.npcs[i]);
+                moved = true;
             }
-            if (!GameField.npcs[i].isStuck()) {
-                if (GameField.npcs[i].getX() < GameField.npcs[i].getTarget().getX()) {
-                    GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.RIGHT));
-                } else if (GameField.npcs[i].getX() > GameField.npcs[i].getTarget().getX()) {
-                    GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.LEFT));
-                } else if (GameField.npcs[i].getY() < GameField.npcs[i].getTarget().getY()) {
-                    GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.DOWN));
-                } else if (GameField.npcs[i].getY() > GameField.npcs[i].getTarget().getY()) {
-                    GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.UP));
-                } else {GameField.npcs[i].setStuck(true);}
-            } else if (GameField.npcs[i].isStuck()) {
-                if (GameField.npcs[i].getY() < GameField.npcs[i].getTarget().getY()) {
-                    GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.DOWN));
-                } else if (GameField.npcs[i].getY() > GameField.npcs[i].getTarget().getY()) {
-                    GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.UP));
-                } else if (GameField.npcs[i].getX() < GameField.npcs[i].getTarget().getX()) {
-                    GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.RIGHT));
-                } else if (GameField.npcs[i].getX() > GameField.npcs[i].getTarget().getX()) {
-                    GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.LEFT));
-                } else {GameField.npcs[i].setStuck(true);}
+            if(!moved){
+                if (!GameField.npcs[i].isStuck()) {
+                    if (GameField.npcs[i].getX() < GameField.npcs[i].getTarget().getX()) {
+                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.RIGHT));
+                    } else if (GameField.npcs[i].getX() > GameField.npcs[i].getTarget().getX()) {
+                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.LEFT));
+                    } else if (GameField.npcs[i].getY() < GameField.npcs[i].getTarget().getY()) {
+                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.DOWN));
+                    } else if (GameField.npcs[i].getY() > GameField.npcs[i].getTarget().getY()) {
+                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.UP));
+                    } else {GameField.npcs[i].setStuck(true);}
+                } else if (GameField.npcs[i].isStuck()) {
+                    if (GameField.npcs[i].getY() < GameField.npcs[i].getTarget().getY()) {
+                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.DOWN));
+                    } else if (GameField.npcs[i].getY() > GameField.npcs[i].getTarget().getY()) {
+                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.UP));
+                    } else if (GameField.npcs[i].getX() < GameField.npcs[i].getTarget().getX()) {
+                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.RIGHT));
+                    } else if (GameField.npcs[i].getX() > GameField.npcs[i].getTarget().getX()) {
+                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.LEFT));
+                    } else {GameField.npcs[i].setStuck(true);}
+                }
             }
+
         }
     }
 
@@ -214,9 +222,13 @@ public class Game {
         }
     }
 
+    public void drawCursor(){
+    }
+
     public void fireSpread() {
-        if (timer == 1 || timer == 40) {
-        map.spreadFire(); }
+        if (timer % 4 == 0) {
+            map.spreadFire();
+        }
         /*
         for (int i = 0; i < GameField.fire.length; i++) {
             try {
@@ -463,6 +475,21 @@ public class Game {
         };
         cn.getTextWindow().addTextMouseListener(tmlis);
 
+        mouseListener = new TextMouseMotionListener() {
+            @Override
+            public void mouseMoved(TextMouseEvent textMouseEvent) {
+                motx = textMouseEvent.getX();
+                moty = textMouseEvent.getY();
+            }
+
+            @Override
+            public void mouseDragged(TextMouseEvent textMouseEvent) {
+                motx = textMouseEvent.getX();
+                moty = textMouseEvent.getY();
+            }
+        };
+        cn.getTextWindow().addTextMouseMotionListener(mouseListener);
+
         klis = new KeyListener() {
             public void keyTyped(KeyEvent e) {}
 
@@ -484,7 +511,7 @@ public class Game {
 
         while (true) {
             try {
-                setTitle("[ f i r e   a n d   i c e ] - Ice : " + GameField.player.getScore() + " pts, Fire: " + GameField.npcs[0].getScore() + " pts");
+                setTitle("[ f i r e   a n d   i c e ] - Ice : " + GameField.player.getScore() + " pts, Fire: " + GameField.npcs[0].getScore() + " pts " + motx + " " + moty);
             } catch (Exception e){
                 setTitle("[ f i r e   a n d   i c e ] - Ice : " + GameField.player.getScore() + "pts, Fire: 0 pts");
             }
