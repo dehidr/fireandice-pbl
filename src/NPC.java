@@ -1,6 +1,15 @@
 public class NPC extends Character{
     public static int score = 0;
 
+    public int getStuckfor() {
+        return stuckfor;
+    }
+
+    public void setStuckfor(int stuckfor) {
+        this.stuckfor = stuckfor;
+    }
+
+    int stuckfor = 0;
     public Coordinate getTarget() {
         return target;
     }
@@ -16,6 +25,8 @@ public class NPC extends Character{
     }
 
     public void setStuck(boolean stuck) {
+        if(!stuck && !this.stuck){ stuckfor=0; }
+        else { stuckfor++; }
         this.stuck = stuck;
     }
 

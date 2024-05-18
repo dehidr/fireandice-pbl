@@ -47,6 +47,7 @@ public class GameObject {
                 case NPC -> {return "C";}
                 case FIRE -> {return "-";}
                 case PACKEDICE -> {return "@";}
+                case ICE -> {return "I";}
                 case SCORE1 -> {return "1";}
                 case SCORE2 -> {return "2";}
                 case SCORE3 -> {return "3";}

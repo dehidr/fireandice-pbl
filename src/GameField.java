@@ -7,6 +7,29 @@ import java.util.concurrent.ExecutionException;
 
 public class GameField {
 
+    public static void restart() {
+        /*field = null;
+        player = null;
+        input = null;
+        npcs = null;
+        fire = null;
+        ice = null;
+        objects = null;
+
+        System.gc();*/
+
+        Player.restart();
+        player = Player.getInstance();
+        GameObject.Type[] input = new GameObject.Type[10];
+        npcs = new NPC[1071];// 51*21 = 1071
+        fire = new Fire[1071];
+        ice = new Ice[100];
+        objects = new GameObject[21][51];
+        npcCtr = 0;
+        fireCtr = 0;
+        iceCtr = 0;
+    }
+
     private static GameField field = null;
     public static Player player = Player.getInstance();
     public static GameObject.Type[] input = new GameObject.Type[10];
@@ -17,6 +40,7 @@ public class GameField {
     public static int npcCtr = 0;
     public static int fireCtr = 0;
     public static int iceCtr = 0;
+
 
     public static void move(Character.Direction dir) {
         switch (dir) {
@@ -52,37 +76,55 @@ public class GameField {
         if (fireCtr > 1070) {fireCtr = 1070;}
     }
 
+    public static void iceCounter(int ice) {
+        iceCtr += ice;
+        if (iceCtr > 99) {iceCtr = 99;}
+    }
+
+
     public static void npcCouncter(int npc) {
         npcCtr += npc;
         if (npcCtr > 1070) {npcCtr = 1070;}
     }
 
+    public static void moveRandom(NPC npc){
+        Random rand = new Random();
+        switch(rand.nextInt(4)){
+            case 0 -> { move(npc, Character.Direction.UP) ;}
+            case 1 -> { move(npc, Character.Direction.DOWN) ;}
+            case 2 -> { move(npc, Character.Direction.RIGHT) ;}
+            case 3 -> { move(npc, Character.Direction.LEFT) ;}
+        }
+        npc.setStuckfor(0);
+    }
+
+
     public static Boolean move(NPC c, Character.Direction dir) {
         boolean stuck = c.isStuck();
         switch (dir) {
             case UP -> {
-                if (map[c.getY() - 1][c.getX()] != '#' && field.spaceAvailable(new Coordinate(c.getY() - 1, c.getX()))) {
+                if (map[c.getY() - 1][c.getX()] != '#' && field.spaceAvailable(c.getCoordinate().getUp())) {
                     c.moveUp();
                     stuck = false;
                     break;
                 }
             }
             case DOWN -> {
-                if (map[c.getY() + 1][c.getX()] != '#' && field.spaceAvailable(new Coordinate(c.getY() + 1, c.getX()))) {
+                if (map[c.getY() + 1][c.getX()] != '#' && field.spaceAvailable(c.getCoordinate().getDown())) {
                     c.moveDown();
                     stuck = false;
                     break;
                 }
             }
             case LEFT -> {
-                if (map[c.getY()][c.getX() - 1] != '#' && field.spaceAvailable(new Coordinate(c.getY(), c.getX() - 1))) {
+                if (map[c.getY()][c.getX() - 1] != '#' && field.spaceAvailable(c.getCoordinate().getLeft())) {
                     c.moveLeft();
                     stuck = false;
                     break;
                 }
             }
             case RIGHT -> {
-                if (map[c.getY()][c.getX() + 1] != '#' && field.spaceAvailable(new Coordinate(c.getY(), c.getX() + 1))) {
+                if (map[c.getY()][c.getX() + 1] != '#' && field.spaceAvailable(c.getCoordinate().getRight())) {
                     c.moveRight();
                     stuck = false;
                     break;
@@ -132,26 +174,26 @@ public class GameField {
             loaded = false;
             System.out.println("could not find file.");
             map = new char[][]{("#####################################################").toCharArray(), ("#          "
-                    + "                                         #").toCharArray(), ("#                               " +
-                    "  " + "                  #").toCharArray(), ("#                                                 " +
-                    "  #").toCharArray(),
-                    ("#                     " + "                              #").toCharArray(), ("#                " +
-                    "                            " + "       #").toCharArray(), ("#                                  " +
-                    "                 #").toCharArray(), ("#       ##  #  ####   " + "  #    ##    ##    ####       " +
-                    "#").toCharArray(), ("#       ##### ##  ##    ### ###   #  #   #  " + "##      #").toCharArray(),
-                    ("#       #  ## ##  ##    #  #  #  ######  ####       #").toCharArray(), ("#       #   #  ####   "
-                    + "  #     # ##    ## #          #").toCharArray(), ("#                                          " +
-                    "  " + "       #").toCharArray(),
-                    ("#           ####  ####  #    # ##  # ####           #").toCharArray(),
-                    ("#           ###  ##  " + "## #    # # # # #   #          #").toCharArray(), ("#           #    " +
-                    "##  ## ##  ## #  ## #   #  " + "        #").toCharArray(), ("#           #     ####   ####  #   " +
-                    "# ####           #").toCharArray(), ("#                     " + "                              " +
-                    "#").toCharArray(), ("#                                            " + "       #").toCharArray(),
-                    ("#                                                   #").toCharArray(), ("#                     "
-                    + "                              #").toCharArray(), ("#                                          " +
-                    "  " + "       #").toCharArray(),
-                    ("#                                                   #").toCharArray(), (
-                            "#####################################################").toCharArray()};
+                    + "                                         #").toCharArray(), ("#                               "
+                    + "  " + "                  #").toCharArray(), ("#                                               " +
+                    "  " + "  #").toCharArray(),
+                    ("#                     " + "                              #").toCharArray(), ("#                "
+                    + "                            " + "       #").toCharArray(), ("#                                " +
+                    "  " + "                 #").toCharArray(), ("#       ##  #  ####   " + "  #    ##    ##    #### " +
+                    "      " + "#").toCharArray(),
+                    ("#       ##### ##  ##    ### ###   #  #   #  " + "##      #").toCharArray(), ("#       #  ## ## " +
+                    " ##    #  #  #  ######  ####       #").toCharArray(), ("#       #   #  ####   " + "  #     # ## " +
+                    "   ## #          #").toCharArray(), ("#                                          " + "  " + "   " +
+                    "    #").toCharArray(), ("#           ####  ####  #    # ##  # ####           #").toCharArray(),
+                    ("#           ###  ##  " + "## #    # # # # #   #          #").toCharArray(), ("#           #    "
+                    + "##  ## ##  ## #  ## #   #  " + "        #").toCharArray(), ("#           #     ####   ####  # " +
+                    "  " + "# ####           #").toCharArray(), ("#                     " + "                        " +
+                    "      " + "#").toCharArray(),
+                    ("#                                            " + "       #").toCharArray(), ("#                " +
+                    "                                   #").toCharArray(), ("#                     " + "             " +
+                    "                 #").toCharArray(), ("#                                          " + "  " + "   " +
+                    "    #").toCharArray(), ("#                                                   #").toCharArray(),
+                    ("#####################################################").toCharArray()};
         }
     }
 
@@ -204,7 +246,7 @@ public class GameField {
                 objects[g.getY() - 1][g.getX() - 1] = g;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
 
@@ -225,6 +267,46 @@ public class GameField {
             npcs[npcCtr] = new NPC(npc.getCoordinate(), 1000);
             npcCouncter(1);
         }
+    }
+
+    public void throwIce(){
+        Ice breeze = null;
+        switch (player.getDirection()){
+            case UP    -> { breeze = new Ice(player.getCoordinate().getUp   (), player.getDirection(), 10, 10); }
+            case DOWN  -> { breeze = new Ice(player.getCoordinate().getDown (), player.getDirection(), 10, 10); }
+            case LEFT  -> { breeze = new Ice(player.getCoordinate().getLeft (), player.getDirection(), 10, 10); }
+            case RIGHT -> { breeze = new Ice(player.getCoordinate().getRight(), player.getDirection(), 10, 10); }
+        }
+        if(
+                breeze.getSpread() > 0 &&
+                        isValid(breeze.getCoordinate()) &&
+                        !isWall(breeze.getCoordinate())
+        ) { addIce(breeze);freeze(breeze); }
+    }
+
+    public void freeze(Ice breeze) {
+        Ice snow = null;
+        try {
+            switch (breeze.getDir()){
+                case UP    -> { snow = new Ice(breeze.getCoordinate().getUp   (), breeze.getDir(),10, breeze.getSpread() - 1 ); }
+                case DOWN  -> { snow = new Ice(breeze.getCoordinate().getDown (), breeze.getDir(),10, breeze.getSpread() - 1 ); }
+                case LEFT  -> { snow = new Ice(breeze.getCoordinate().getLeft (), breeze.getDir(),10, breeze.getSpread() - 1 ); }
+                case RIGHT -> { snow = new Ice(breeze.getCoordinate().getRight(), breeze.getDir(),10, breeze.getSpread() - 1 ); }
+            }
+
+
+            if(
+               snow.getSpread() > 0 &&
+               isValid(snow.getCoordinate()) &&
+               !isWall(snow.getCoordinate())
+            ) { addIce(snow);freeze(snow); }
+        }catch (Exception e){}
+    }
+
+    public void addIce(Ice cream){
+        ice[iceCtr] = cream;
+        addObject(cream);
+        iceCounter(1);
     }
 
     public boolean spaceAvailable(Coordinate coordinate) {
@@ -266,9 +348,7 @@ public class GameField {
     }
 
     public boolean validateFireCoordinate(Coordinate loc) {
-        return  !GameField.getInstance().checkFire(loc) &&
-                !GameField.getInstance().isWall(loc)    &&
-                GameField.getInstance().isValid(loc);
+        return !GameField.getInstance().checkFire(loc) && !GameField.getInstance().isWall(loc) && GameField.getInstance().isValid(loc);
     }
 
     public Coordinate getBlank() {
@@ -276,7 +356,7 @@ public class GameField {
         int x = random.nextInt(53);
         int y = random.nextInt(23);
 
-        while (map[y][x] != ' ' || map[y][x] == '#' ) {
+        while (map[y][x] != ' ' || map[y][x] == '#') {
             x = random.nextInt(53);
             y = random.nextInt(23);
         }
@@ -288,12 +368,13 @@ public class GameField {
         try {
             return map[loc.getY()][loc.getX()] == '#';
         } catch (Exception e) {
-            return true;}
+            return true;
+        }
     }
 
     public Boolean checkFire(Coordinate loc) {
         //return false;
-        if( getObject(loc) == null ){
+        if (getObject(loc) == null) {
             return false;
         } else {
             return getObject(loc).getType() == GameObject.Type.FIRE;
@@ -301,10 +382,9 @@ public class GameField {
     }
 
     public void addFire(Fire flame) {
-        if(checkFire(flame.getCoordinate())){
+        if (checkFire(flame.getCoordinate())) {
             removeObject(flame.getCoordinate());
-        }
-        if (isValid(flame.getCoordinate()) && !isWall(flame.getCoordinate()) && !checkFire(flame.getCoordinate())) {
+        } else if (isValid(flame.getCoordinate()) && !isWall(flame.getCoordinate()) && !checkFire(flame.getCoordinate())) {
             GameField.fire[fireCtr] = flame;
             GameField.fire[fireCtr].setIndex(fireCtr);
             addObject(flame);
@@ -316,12 +396,20 @@ public class GameField {
         addFire(new Fire());
     }
 
+    public void removeFire(Coordinate loc) {
+        try {
+            int index = ((Fire) getObject(loc)).getIndex();
+            removeFire(index);
+        } catch (Exception e) {}
+    }
+
     public void removeFire(int index) {
         removeObject(fire[index]);
         fire[index] = null;
         for (int i = index; i + 1 < fireCtr; i++) {
             fire[i] = fire[i + 1];
         }
+        fire[fireCtr] = null;
         fireCounter(-1);
     }
 
@@ -344,8 +432,7 @@ public class GameField {
             removeFire(index);
         } else if (!fire[index].isUsed() && fire[index].getSpread() > 0) {
             for (Fire f : fire[index].spread()) {
-                try {if (f != null && validateFireCoordinate(f.coordinate)) {addFire(f);}}
-                catch (Exception e) {}
+                try {if (f != null && validateFireCoordinate(f.coordinate)) {addFire(f);}} catch (Exception e) {}
             }
             fire[index].setUsed(true);
         }

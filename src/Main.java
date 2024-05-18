@@ -1,5 +1,13 @@
 public class Main {
+    static Game myGame;
     public static void main(String[] args) throws Exception {
-        Game myGame = new Game();
+        myGame = new Game();
+    }
+
+    public static void restart() throws Exception {
+        myGame = null;
+        GameField.restart();
+        System.gc();
+        myGame = new Game();
     }
 }

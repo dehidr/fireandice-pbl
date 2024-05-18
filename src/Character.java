@@ -42,6 +42,7 @@ public abstract class Character extends GameObject {
             case LEFT   : { coordinate.moveLeft(); break; }
             case RIGHT  : { coordinate.moveRight(); break; }
         }
+        this.setDirection(dir);
     }
 
 

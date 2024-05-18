@@ -85,6 +85,22 @@ public class Game {
     public int menuselect = 0;
     // ----------------------------------------------------
 
+    public void restart(){
+        mousepr = 0;
+        mousex = 0;
+        mousey = 0;
+        keypr = 0;
+        rkey = 0;
+        updated = true;
+        menu = true;
+        end = false;
+        menumap = false;
+        menuabout = false;
+        timer = 0;
+        menuselect = 0;
+        animationtimer = 0;
+    }
+
     public void setTitle(String title){
         cn.setTitle(title);
     }
@@ -142,8 +158,10 @@ public class Game {
                 }
                 GameField.objects[GameField.npcs[i].getY() - 1][GameField.npcs[i].getX() - 1] = null;
             }
-
             GameField.npcs[i].setTarget(new Coordinate(GameField.getInstance().getNearestScore(GameField.npcs[i].getCoordinate())));
+            if(GameField.npcs[i].getStuckfor() > 2 || timer == 36 ){
+                GameField.moveRandom(GameField.npcs[i]);
+            }
             if (!GameField.npcs[i].isStuck()) {
                 if (GameField.npcs[i].getX() < GameField.npcs[i].getTarget().getX()) {
                     GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.RIGHT));
@@ -274,10 +292,10 @@ public class Game {
             }
         }
         if (!menu) {
-            drawPlayer(x, y);
+            drawFire(x, y);
             drawNPCs(x, y);
             drawObjects(x, y);
-            drawFire(x, y);
+            drawPlayer(x, y);
         }
     }
 
@@ -476,85 +494,12 @@ public class Game {
                         CatppuccinRed), red);
                 color = white;
             }
-            if (menu) {
-
-                drawAnimation(5 + 2, 5 + 10, animationtimer + 46);
-                if (updated) {drawMenu(5, 5);}
-                updated = false;
-                if (menumap) {
-                    drawEmpty(31, 4, 27, 57);
-                    drawBox(31, 4, 3, 57, map.isLoaded() ? "[ m a p   l o a d e d ]" : "[ m a p   n o t   f o u n d " +
-                            "]", new TextAttributes(CatppuccinBase, CatppuccinRed), red);
-                    color = red;
-                    drawBox(31, 7, 25, 57);
-                    drawMap(33, 8);
-                    color = white;
-                    // drawBox(5,34, 5, 51 , map.isLoaded() ? "m a p   l o a d e d" : "m a p   n o t   f o u n d");
-                }
-                if (menuabout) {
-                    color = red;
-                    String desc = "try to collect more points than the opponent.\n" + "escape from the fire (-) and " +
-                            "throw ice (+) at\n" + "the opponent                                 \n" + " \n" + "[ c o" +
-                            " n t r o l s ]\n" + " \n" + "> you can move with WASD or the arrow keys.  \n" + "> you " +
-                            "can throw ice with spacebar.           \n" + "> you can enable the developer mode with J" +
-                            "   \n" + "> while in dev mode summon packed ice, fire, \n" + "  points and robots with " +
-                            "RTFG                \n" + "> you can quit with Q                        \n" + "\n" + "[ " +
-                            "c r e d i t s ]\n" + " \n" + "> logo created with figlet using             \n" + "  " +
-                            "github.com/xero/figlet-fonts               \n" + "> animation created by aem1k with " +
-                            "javascript \n" + "  aem1k.com/fire/                            \n" + " \n" + "... \n";
-                    drawEmpty(31, 4, 27, 57);
-                    drawBox(31, 7, 25, 57, desc, white, red);
-                    drawBox(31, 4, 3, 57, "[ a b o u t ]", new TextAttributes(CatppuccinBase, CatppuccinRed), red);
-                    color = red;
-                    // drawBox(5,34, 5, 51 , map.isLoaded() ? "m a p   l o a d e d" : "f i l e   n o t   f o u n d");
-                }
-            }
+            if (menu) { menu(); }
             //drawBox( 5,34,3,30,"menuselect : " + menuselect);
-            if (!menu) {
-                fireSpread();
-                if (GameField.objects[GameField.player.getY() - 1][GameField.player.getX() - 1] != null) {
-                    switch (GameField.objects[GameField.player.getY() - 1][GameField.player.getX() - 1].getType()) {
-                        case SCORE1 -> GameField.player.score(3);
-                        case SCORE2 -> GameField.player.score(10);
-                        case SCORE3 -> GameField.player.score(30);
-                        case PACKEDICE -> GameField.player.packedIce++;
-                        case FIRE -> GameField.player.damage(100);
-                    }
-                    GameField.objects[GameField.player.getY() - 1][GameField.player.getX() - 1] = null;
-                }
-                if (timer == 1) {map.input();}
-                if (timer % 4 == 0) {
-                    moveNPCs();
-                    updated = true;
-                }
-                if (updated) {
-                    color = red;
+            if (!menu) { fireandice(); }
 
-                    drawBox(31, 7, 25, 57);
-                    drawMap(33, 8);
-                    drawBox(5, 7, 25, 25,
-                            GameField.player.getCoordinate().toString() + " " + map.getNearestScore(GameField.player.getCoordinate()).toString(), white, red);
-                    drawBox(89, 7, 25, 25, GameField.player.getLife() + " " + GameField.player.getScore(), white, red);
-                    //drawBox(5,2,5,109, map.queueToString(),white,red);
-                    color = red;
-
-                    drawBox(48, 3, 3, 23, map.queueToString(), white, red);
-                    color = white;
-
-                    updated = false;
-                }
-                if (GameField.player.getLife() <= 0) {
-                    end = true;
-                    menu = false;
-                    updated = true;
-                }
-            }
-
-            if (end == true) {
-                refresh();
-                drawAnimation(5 + 2, 5 + 10, animationtimer + 46);
-                if (updated) {drawEnd(5, 5);}
-                updated = false;
+            if (end) {
+                gameover();
             }
 
             if (mousepr == 1) {  // if mouse button pressed
@@ -566,6 +511,14 @@ public class Game {
                 mousepr = 0;     // last action
             }
             if (keypr == 1) {    // if keyboard button pressed
+                if(end){
+                    if (rkey == KeyEvent.VK_ENTER) {
+                        restart();
+                        refresh();
+                        Main.restart();
+                    }
+                }
+
                 if (menu) {
                     if (rkey == KeyEvent.VK_LEFT) {
                         menuselect = (menuselect + 3) % 4;
@@ -609,18 +562,28 @@ public class Game {
                 } else {
                     if (rkey == KeyEvent.VK_LEFT || rkey == KeyEvent.VK_A) {
                         GameField.move(Character.Direction.LEFT);
+                        GameField.player.setDirection(Character.Direction.LEFT);
                         updated = true;
                     }
                     if (rkey == KeyEvent.VK_RIGHT || rkey == KeyEvent.VK_D) {
                         GameField.move(Character.Direction.RIGHT);
+                        GameField.player.setDirection(Character.Direction.RIGHT);
+
                         updated = true;
                     }
                     if (rkey == KeyEvent.VK_UP || rkey == KeyEvent.VK_W) {
                         GameField.move(Character.Direction.UP);
+                        GameField.player.setDirection(Character.Direction.UP);
                         updated = true;
                     }
                     if (rkey == KeyEvent.VK_DOWN || rkey == KeyEvent.VK_S) {
                         GameField.move(Character.Direction.DOWN);
+                        GameField.player.setDirection(Character.Direction.DOWN);
+
+                        updated = true;
+                    }
+                    if (rkey == KeyEvent.VK_SPACE) {
+                        map.throwIce();
                         updated = true;
                     }
                     if (rkey == KeyEvent.VK_F && debug) {
@@ -640,6 +603,7 @@ public class Game {
                         //map.addObject(new GameObject(map.getBlank(), GameObject.Type.FIRE));
                         updated = true;
                     }
+
 
                     char rckey = (char) rkey;
                     //        left          right          up            down
@@ -661,6 +625,87 @@ public class Game {
             }
             Thread.sleep(25);
             timer();
+        }
+    }
+
+    private void gameover() {
+        refresh();
+        drawAnimation(5 + 2, 5 + 10, animationtimer + 46);
+        if (updated) {drawEnd(5, 5);}
+        updated = false;
+    }
+
+    private void fireandice() {
+        fireSpread();
+        if (GameField.objects[GameField.player.getY() - 1][GameField.player.getX() - 1] != null) {
+            switch (GameField.objects[GameField.player.getY() - 1][GameField.player.getX() - 1].getType()) {
+                case SCORE1 -> GameField.player.score(3);
+                case SCORE2 -> GameField.player.score(10);
+                case SCORE3 -> GameField.player.score(30);
+                case PACKEDICE -> GameField.player.packedIce++;
+                case FIRE -> { GameField.player.damage(100);
+                    map.removeFire(GameField.player.getCoordinate());
+                }
+            }
+            GameField.objects[GameField.player.getY() - 1][GameField.player.getX() - 1] = null;
+        }
+        if (timer == 1) {map.input();}
+        if (timer % 4 == 0) {
+            moveNPCs();
+            updated = true;
+        }
+        if (updated) {
+            color = red;
+
+            drawBox(31, 7, 25, 57);
+            drawMap(33, 8);
+            drawBox(5, 7, 25, 25,
+                    GameField.player.getCoordinate().toString() + " " + map.getNearestScore(GameField.player.getCoordinate()).toString(), white, red);
+            drawBox(89, 7, 25, 25, GameField.player.getLife() + " " + GameField.player.getScore(), white, red);
+            //drawBox(5,2,5,109, map.queueToString(),white,red);
+            color = red;
+
+            drawBox(48, 3, 3, 23, map.queueToString(), white, red);
+            color = white;
+
+            updated = false;
+        }
+        if (GameField.player.getLife() <= 0) {
+            end = true;
+            menu = false;
+            updated = true;
+        }}
+
+    private void menu() {
+        drawAnimation(5 + 2, 5 + 10, animationtimer + 46);
+        if (updated) {drawMenu(5, 5);}
+        updated = false;
+        if (menumap) {
+            drawEmpty(31, 4, 27, 57);
+            drawBox(31, 4, 3, 57, map.isLoaded() ? "[ m a p   l o a d e d ]" : "[ m a p   n o t   f o u n d " +
+                    "]", new TextAttributes(CatppuccinBase, CatppuccinRed), red);
+            color = red;
+            drawBox(31, 7, 25, 57);
+            drawMap(33, 8);
+            color = white;
+            // drawBox(5,34, 5, 51 , map.isLoaded() ? "m a p   l o a d e d" : "m a p   n o t   f o u n d");
+        }
+        if (menuabout) {
+            color = red;
+            String desc = "try to collect more points than the opponent.\n" + "escape from the fire (-) and " +
+                    "throw ice (+) at\n" + "the opponent                                 \n" + " \n" + "[ c o" +
+                    " n t r o l s ]\n" + " \n" + "> you can move with WASD or the arrow keys.  \n" + "> you " +
+                    "can throw ice with spacebar.           \n" + "> you can enable the developer mode with J" +
+                    "   \n" + "> while in dev mode summon packed ice, fire, \n" + "  points and robots with " +
+                    "RTFG                \n" + "> you can quit with Q                        \n" + "\n" + "[ " +
+                    "c r e d i t s ]\n" + " \n" + "> logo created with figlet using             \n" + "  " +
+                    "github.com/xero/figlet-fonts               \n" + "> animation created by aem1k with " +
+                    "javascript \n" + "  aem1k.com/fire/                            \n" + " \n" + "... \n";
+            drawEmpty(31, 4, 27, 57);
+            drawBox(31, 7, 25, 57, desc, white, red);
+            drawBox(31, 4, 3, 57, "[ a b o u t ]", new TextAttributes(CatppuccinBase, CatppuccinRed), red);
+            color = red;
+            // drawBox(5,34, 5, 51 , map.isLoaded() ? "m a p   l o a d e d" : "f i l e   n o t   f o u n d");
         }
     }
 
