@@ -39,7 +39,8 @@ public class NPC extends Character{
 
     public void score (int pts) { score += pts; }
     public static void resetScore() { score = 0; }
-    public int getScore() { return score; }
+
+    public static int getNPCScore(){ return score; }
 
     boolean stuck = false;
 

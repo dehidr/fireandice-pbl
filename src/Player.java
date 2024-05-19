@@ -1,6 +1,23 @@
 class Player extends Character{
 
     private static Player player = null;
+
+    public int getKills() {
+        return kills;
+    }
+    public void kills(int k){ kills += k; }
+
+    int kills = 0;
+
+    public int getPackedIce() {
+        return packedIce;
+    }
+
+    public void PackedIce(int packedIce) {
+        this.packedIce += packedIce;
+        if( this.packedIce < 0 ) { this.packedIce = 0; }
+    }
+
     int packedIce = 0;
 
     public static Player getInstance(){

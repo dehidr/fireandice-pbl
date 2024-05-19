@@ -1,5 +1,6 @@
 public class Main {
     static Game myGame;
+
     public static void main(String[] args) throws Exception {
         myGame = new Game();
     }

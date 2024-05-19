@@ -1,9 +1,6 @@
 import java.io.File;
-import java.security.interfaces.EdECKey;
-import java.util.Objects;
 import java.util.Scanner;
 import java.util.Random;
-import java.util.concurrent.ExecutionException;
 
 public class GameField {
 
@@ -35,9 +32,11 @@ public class GameField {
     public static GameObject.Type[] input = new GameObject.Type[10];
     public static NPC[] npcs = new NPC[1071];// 51*21 = 1071
     public static Fire[] fire = new Fire[1071];
-    public static Ice[] ice = new Ice[100];
+    public static Ice[] ice = new Ice[1071];
+    public static int[] spread = new int[1071];
     public static GameObject[][] objects = new GameObject[21][51];
     public static int npcCtr = 0;
+    public static int spreadCtr = 0;
     public static int fireCtr = 0;
     public static int iceCtr = 0;
 
@@ -78,9 +77,13 @@ public class GameField {
 
     public static void iceCounter(int ice) {
         iceCtr += ice;
-        if (iceCtr > 99) {iceCtr = 99;}
+        if (iceCtr > 1070) {iceCtr = 1070;}
     }
 
+    public static void spreadCounter(int spread) {
+        spreadCtr += spread;
+        if (spreadCtr > 1070) {spreadCtr = 1070;}
+    }
 
     public static void npcCouncter(int npc) {
         npcCtr += npc;
@@ -269,29 +272,122 @@ public class GameField {
         }
     }
 
+    public void spreadIce() {
+        int t = spreadCtr;
+
+        for (int i = 0; i < t; i++) {
+            try {
+                spreadIce(ice[spread[i]], i, t);
+                if(ice[spread[i]].getSpread() <= 0){
+                    for (int j = i; j + 1 < spreadCtr; j++) {
+                        spread[j] = spread[j + 1];
+                    }
+                    spreadCounter(-1);
+                }
+
+            } catch (Exception e) {}
+        }
+    }
+
+    public void spreadIce(Ice snow, int index, int ctr){
+        if (snow.getHealth() <= 0) {
+            removeIce(snow.getIndex());
+        } else if (!snow.isUsed() && snow.getSpread() > 0) {
+            for (Ice cream : snow.spread()) {
+                try {if (cream != null && validateIceCoordinate(cream.getCoordinate())) {addIce(cream);}} catch (Exception e) {}
+            }
+            snow.setUsed(true);
+        }
+        snow.melt();
+    }
+
+    public void throwIce(int motx, int moty) {
+        int x = motx - 34;
+        int y = moty - 8;
+        Coordinate mot = new Coordinate(x, y);
+
+        if(mot.getX() == player.getX() && mot.getY() == player.getY()){}
+        else{
+            Ice breeze = new Ice(player.getCoordinate(), 10, 10, iceCtr);
+            Coordinate[] path = Coordinate.path(player.getCoordinate(), mot);
+            //Double distance = Coordinate.distance(mot, player.getCoordinate());
+
+            try {
+                if (breeze.getSpread() > 0 && isValid(breeze.getCoordinate()) && !isWall(breeze.getCoordinate())) {
+                    player.PackedIce(-1);
+                    freeze(breeze, path, 0);
+                } else if(breeze.getSpread() >= 0 && isValid(breeze.getCoordinate())){
+                    spread[spreadCtr] = breeze.getIndex();
+                    spreadCounter(1);
+                }
+            }catch (Exception e){}
+        }
+    }
+
+    public void removeIce(Coordinate loc) {
+        try {
+            int index = ((Ice) getObject(loc)).getIndex();
+            removeFire(index);
+        } catch (Exception e) {}
+    }
+
+    public void removeNPC(int index){
+        npcs[index] = null;
+        for (int i = index; i + 1 < npcCtr; i++) {
+            npcs[i] = npcs[i + 1];
+        }
+        npcs[npcCtr] = null;
+        GameField.player.kills(1);
+        npcCouncter(-1);
+    }
+
+    public void removeIce(int index) {
+        removeObject(ice[index]);
+        ice[index] = null;
+        for (int i = index; i + 1 < iceCtr; i++) {
+            ice[i] = ice[i + 1];
+        }
+        ice[iceCtr] = null;
+        iceCounter(-1);
+    }
+
+    public void freeze(Ice breeze, Coordinate[] path, int index) {
+        try {
+            Ice snow = new Ice(path[index + 1], 10, breeze.getSpread() - 1, iceCtr);
+            if (snow.getSpread() > 0 && isValid(snow.getCoordinate()) && !isWall(snow.getCoordinate())) {
+                addIce(snow);
+                freeze(snow, path, index + 1);
+            } else if(breeze.getSpread() >= 0 && isValid(breeze.getCoordinate())){
+                spread[spreadCtr] = breeze.getIndex();
+                ice[breeze.getIndex()].setSpread(10);
+                spreadCounter(1);
+            }
+        } catch (Exception e) {}
+    }
+
     public void throwIce(){
         Ice breeze = null;
         switch (player.getDirection()){
-            case UP    -> { breeze = new Ice(player.getCoordinate().getUp   (), player.getDirection(), 10, 10); }
-            case DOWN  -> { breeze = new Ice(player.getCoordinate().getDown (), player.getDirection(), 10, 10); }
-            case LEFT  -> { breeze = new Ice(player.getCoordinate().getLeft (), player.getDirection(), 10, 10); }
-            case RIGHT -> { breeze = new Ice(player.getCoordinate().getRight(), player.getDirection(), 10, 10); }
+            case UP    -> { breeze = new Ice(player.getCoordinate().getUp   (), player.getDirection(), 10, 10, iceCtr); }
+            case DOWN  -> { breeze = new Ice(player.getCoordinate().getDown (), player.getDirection(), 10, 10, iceCtr); }
+            case LEFT  -> { breeze = new Ice(player.getCoordinate().getLeft (), player.getDirection(), 10, 10, iceCtr); }
+            case RIGHT -> { breeze = new Ice(player.getCoordinate().getRight(), player.getDirection(), 10, 10, iceCtr); }
         }
         if(
                 breeze.getSpread() > 0 &&
                         isValid(breeze.getCoordinate()) &&
                         !isWall(breeze.getCoordinate())
-        ) { addIce(breeze);freeze(breeze); }
+        ) {  player.PackedIce(-1); addIce(breeze);freeze(breeze);}
     }
 
     public void freeze(Ice breeze) {
         Ice snow = null;
         try {
             switch (breeze.getDir()){
-                case UP    -> { snow = new Ice(breeze.getCoordinate().getUp   (), breeze.getDir(),10, breeze.getSpread() - 1 ); }
-                case DOWN  -> { snow = new Ice(breeze.getCoordinate().getDown (), breeze.getDir(),10, breeze.getSpread() - 1 ); }
-                case LEFT  -> { snow = new Ice(breeze.getCoordinate().getLeft (), breeze.getDir(),10, breeze.getSpread() - 1 ); }
-                case RIGHT -> { snow = new Ice(breeze.getCoordinate().getRight(), breeze.getDir(),10, breeze.getSpread() - 1 ); }
+                case UP    -> { snow = new Ice(breeze.getCoordinate().getUp   (), breeze.getDir(),10, breeze.getSpread() - 1 , iceCtr); }
+                case DOWN  -> { snow = new Ice(breeze.getCoordinate().getDown (), breeze.getDir(),10, breeze.getSpread() - 1 , iceCtr); }
+                case LEFT  -> { snow = new Ice(breeze.getCoordinate().getLeft (), breeze.getDir(),10, breeze.getSpread() - 1 , iceCtr); }
+                case RIGHT -> { snow = new Ice(breeze.getCoordinate().getRight(), breeze.getDir(),10, breeze.getSpread() - 1 , iceCtr); }
             }
 
 
@@ -300,13 +396,20 @@ public class GameField {
                isValid(snow.getCoordinate()) &&
                !isWall(snow.getCoordinate())
             ) { addIce(snow);freeze(snow); }
+            else if(breeze.getSpread() >= 0 && isValid(breeze.getCoordinate())){
+                spread[spreadCtr] = breeze.getIndex();
+                ice[breeze.getIndex()].setSpread(10);
+                spreadCounter(1);
+            }
         }catch (Exception e){}
     }
 
     public void addIce(Ice cream){
-        ice[iceCtr] = cream;
-        addObject(cream);
-        iceCounter(1);
+        if(validateIceCoordinate(cream.getCoordinate())){
+            ice[iceCtr] = cream;
+            addObject(cream);
+            iceCounter(1);
+        }
     }
 
     public boolean spaceAvailable(Coordinate coordinate) {
@@ -351,6 +454,10 @@ public class GameField {
         return !GameField.getInstance().checkFire(loc) && !GameField.getInstance().isWall(loc) && GameField.getInstance().isValid(loc);
     }
 
+    public boolean validateIceCoordinate(Coordinate loc) {
+        return !GameField.getInstance().checkIce(loc) && !GameField.getInstance().isWall(loc) && GameField.getInstance().isValid(loc);
+    }
+
     public Coordinate getBlank() {
         Random random = new Random();
         int x = random.nextInt(53);
@@ -378,6 +485,15 @@ public class GameField {
             return false;
         } else {
             return getObject(loc).getType() == GameObject.Type.FIRE;
+        }
+    }
+
+    public Boolean checkIce(Coordinate loc) {
+        //return false;
+        if (getObject(loc) == null) {
+            return false;
+        } else {
+            return getObject(loc).getType() == GameObject.Type.ICE;
         }
     }
 
@@ -412,6 +528,7 @@ public class GameField {
         fire[fireCtr] = null;
         fireCounter(-1);
     }
+
 
     public void spreadFire() {
         int t = fireCtr;

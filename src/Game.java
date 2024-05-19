@@ -7,6 +7,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
 import enigma.console.TextAttributes;
+import org.w3c.dom.Text;
 
 import java.awt.Color;
 
@@ -67,6 +68,7 @@ public class Game {
     boolean isWindows = false;
     char wallChar = '▀';
     char playerChar = '▀';
+    char healthChar = '♥';
     char npcChar = '▀';
     char[] boxChars = "─│╭╮╰╯".toCharArray(); //
 
@@ -78,12 +80,15 @@ public class Game {
     public int keypr;   // key pressed?
     public int rkey;    // key   (for press/release)
     public boolean updated = true;
+    public boolean game = false;
     public boolean menu = true;
     public boolean menumap = false;
     public boolean menuabout = false;
     public boolean end = false;
     public boolean debug = false;
     public int timer = 0;
+    public int gameTime = 240;
+    public int universalTimer = 0;
     public int animationtimer = 0;
     public int menuselect = 0;
     // ----------------------------------------------------
@@ -109,8 +114,15 @@ public class Game {
     }
 
     public void timer() {
+        if(timer == 0) {universalTimer++;}
         timer = (timer + 1) % 80;
         animationtimer = (animationtimer + 1) % 17;
+        if(universalTimer > gameTime) {
+            end = true;
+            game = false;
+            menu = false;
+            updated = true;
+        }
     }
 
     public void refresh() {
@@ -134,13 +146,17 @@ public class Game {
         }
     }
 
+    public void drawAscii(){}
+
     public void drawAnimation(int x, int y, int frame) {
         frame = (frame) % 63;
         for (int i = 0; i < 18; i++) {
             for (int j = 0; j < 29; j++) {
                 color = new TextAttributes(CatppuccinRed, CatppuccinPeach);
                 if (animation[frame][i][j] == '`') {
-                    color = white;
+                    //color = white;
+                    //color = new TextAttributes(CatppuccinSurface1, CatppuccinBase);
+                    color = new TextAttributes(CatppuccinBase, CatppuccinBase);
                     if (i > 10 && i < 17 && j > 8 && j < 19) {color = new TextAttributes(CatppuccinRed, Color.white);}
                 } else if (animation[frame][i][j] == '*') {color = new TextAttributes(CatppuccinPeach, CatppuccinRed);}
                 cn.getTextWindow().output(x + j, y + i, animation[frame][i][j], color);
@@ -152,45 +168,48 @@ public class Game {
     public void moveNPCs() {
 
         for (int i = 0; i < map.npcCtr; i++) {
-            if (GameField.objects[GameField.npcs[i].getY() - 1][GameField.npcs[i].getX() - 1] != null) {
-                switch (GameField.objects[GameField.npcs[i].getY() - 1][GameField.npcs[i].getX() - 1].getType()) {
-                    case SCORE1 -> GameField.npcs[i].score(10);
-                    case SCORE2 -> GameField.npcs[i].score(30);
-                    case SCORE3 -> GameField.npcs[i].score(100);
-                    case ICE -> GameField.npcs[i].damage(100);
+            if (GameField.npcs[i].getLife() <= 0){
+                map.removeNPC(i);
+            } else{
+                if (GameField.objects[GameField.npcs[i].getY() - 1][GameField.npcs[i].getX() - 1] != null) {
+                    switch (GameField.objects[GameField.npcs[i].getY() - 1][GameField.npcs[i].getX() - 1].getType()) {
+                        case SCORE1 -> GameField.npcs[i].score(10);
+                        case SCORE2 -> GameField.npcs[i].score(30);
+                        case SCORE3 -> GameField.npcs[i].score(100);
+                        case ICE -> GameField.npcs[i].damage(100);
+                    }
+                    GameField.objects[GameField.npcs[i].getY() - 1][GameField.npcs[i].getX() - 1] = null;
                 }
-                GameField.objects[GameField.npcs[i].getY() - 1][GameField.npcs[i].getX() - 1] = null;
-            }
-            GameField.npcs[i].setTarget(new Coordinate(GameField.getInstance().getNearestScore(GameField.npcs[i].getCoordinate())));
-            boolean moved = false;
-            if(GameField.npcs[i].getStuckfor() > 2 || timer == 36 ){
-                GameField.moveRandom(GameField.npcs[i]);
-                moved = true;
-            }
-            if(!moved){
-                if (!GameField.npcs[i].isStuck()) {
-                    if (GameField.npcs[i].getX() < GameField.npcs[i].getTarget().getX()) {
-                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.RIGHT));
-                    } else if (GameField.npcs[i].getX() > GameField.npcs[i].getTarget().getX()) {
-                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.LEFT));
-                    } else if (GameField.npcs[i].getY() < GameField.npcs[i].getTarget().getY()) {
-                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.DOWN));
-                    } else if (GameField.npcs[i].getY() > GameField.npcs[i].getTarget().getY()) {
-                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.UP));
-                    } else {GameField.npcs[i].setStuck(true);}
-                } else if (GameField.npcs[i].isStuck()) {
-                    if (GameField.npcs[i].getY() < GameField.npcs[i].getTarget().getY()) {
-                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.DOWN));
-                    } else if (GameField.npcs[i].getY() > GameField.npcs[i].getTarget().getY()) {
-                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.UP));
-                    } else if (GameField.npcs[i].getX() < GameField.npcs[i].getTarget().getX()) {
-                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.RIGHT));
-                    } else if (GameField.npcs[i].getX() > GameField.npcs[i].getTarget().getX()) {
-                        GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.LEFT));
-                    } else {GameField.npcs[i].setStuck(true);}
+                GameField.npcs[i].setTarget(new Coordinate(GameField.getInstance().getNearestScore(GameField.npcs[i].getCoordinate())));
+                boolean moved = false;
+                if(GameField.npcs[i].getStuckfor() > 2 || timer == 36 ){
+                    GameField.moveRandom(GameField.npcs[i]);
+                    moved = true;
+                }
+                if(!moved){
+                    if (!GameField.npcs[i].isStuck()) {
+                        if (GameField.npcs[i].getX() < GameField.npcs[i].getTarget().getX()) {
+                            GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.RIGHT));
+                        } else if (GameField.npcs[i].getX() > GameField.npcs[i].getTarget().getX()) {
+                            GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.LEFT));
+                        } else if (GameField.npcs[i].getY() < GameField.npcs[i].getTarget().getY()) {
+                            GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.DOWN));
+                        } else if (GameField.npcs[i].getY() > GameField.npcs[i].getTarget().getY()) {
+                            GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.UP));
+                        } else {GameField.npcs[i].setStuck(true);}
+                    } else if (GameField.npcs[i].isStuck()) {
+                        if (GameField.npcs[i].getY() < GameField.npcs[i].getTarget().getY()) {
+                            GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.DOWN));
+                        } else if (GameField.npcs[i].getY() > GameField.npcs[i].getTarget().getY()) {
+                            GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.UP));
+                        } else if (GameField.npcs[i].getX() < GameField.npcs[i].getTarget().getX()) {
+                            GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.RIGHT));
+                        } else if (GameField.npcs[i].getX() > GameField.npcs[i].getTarget().getX()) {
+                            GameField.npcs[i].setStuck(GameField.move(GameField.npcs[i], Character.Direction.LEFT));
+                        } else {GameField.npcs[i].setStuck(true);}
+                    }
                 }
             }
-
         }
     }
 
@@ -225,6 +244,13 @@ public class Game {
     public void drawCursor(){
     }
 
+
+    public void iceSpread() {
+        if (timer % 4 == 0) {
+            map.spreadIce();
+        }
+    }
+
     public void fireSpread() {
         if (timer % 4 == 0) {
             map.spreadFire();
@@ -243,6 +269,29 @@ public class Game {
                     drawBox(5,32,5,109, e.toString(), new TextAttributes(CatppuccinText, CatppuccinBase), new TextAttributes(CatppuccinText, CatppuccinBase ));
                 }            }
         }*/
+    }
+
+    public void drawIce(int x, int y){
+
+
+
+        for (int i = 0; i < GameField.iceCtr; i++){
+
+            try {
+                if(GameField.ice[i].getHealth() <= 0) { map.removeIce(i); }
+
+                if(timer % 4 == 0){ GameField.ice[i].melt(); }
+                color =new TextAttributes(CatppuccinSky, CatppuccinBase);
+
+                cn.getTextWindow().output(x + GameField.ice[i].getX(), y + GameField.ice[i].getY(),
+                        GameField.ice[i].toString().charAt(0), color);
+            } catch (Exception e) {
+                if(debug){
+                    //drawBox(5,32,5,109, e.toString(), new TextAttributes(CatppuccinText, CatppuccinBase), new TextAttributes(CatppuccinText, CatppuccinBase ));
+                }
+            }
+
+        }
     }
 
     public void drawFire(int x, int y) {
@@ -275,7 +324,8 @@ public class Game {
                             // .objects[i][j].fightFire(); }; updated=true; }
                         }
                     }
-                    if( GameField.objects[i][j].getType() != GameObject.Type.FIRE){
+                    if( GameField.objects[i][j].getType() != GameObject.Type.FIRE &&
+                        GameField.objects[i][j].getType() != GameObject.Type.ICE){
                         cn.getTextWindow().output(x + GameField.objects[i][j].getX(), y + GameField.objects[i][j].getY(),
                                 GameField.objects[i][j].toString().charAt(0), color);
                     }
@@ -303,8 +353,9 @@ public class Game {
                 if (isWindows) {tmp = '#';}
             }
         }
-        if (!menu) {
+        if (game) {
             drawFire(x, y);
+            drawIce(x, y);
             drawNPCs(x, y);
             drawObjects(x, y);
             drawPlayer(x, y);
@@ -314,10 +365,10 @@ public class Game {
     public void drawLogo(int x, int y) {
         for (int i = 0; i < 105; i++) {
             for (int j = 0; j < 7; j++) {
-                if (i < 41) {color = red;} else if (i < 74) {color = white;} else {
+                if (i < 41) {color = red;} else if (i < 74) {color = new TextAttributes(CatppuccinPink,CatppuccinBase);} else {
                     color = new TextAttributes(CatppuccinSky, CatppuccinBase);
                 }
-                cn.getTextWindow().output(x + 2 + i, y + j, logo[j][i], color);
+                cn.getTextWindow().output(x + 2 + i, y + j,  logo[j][i], color);
             }
         }
     }
@@ -327,11 +378,13 @@ public class Game {
             npcChar = 'C';
             wallChar = '#';
             playerChar = 'P';
+            healthChar = '+';
             boxChars = "-|++++".toCharArray();
         } else {
             wallChar = '▀';
             playerChar = '▀';
             npcChar = '▀';
+            healthChar = '♥';
             boxChars = "─│╭╮╰╯".toCharArray(); //
         }
         updated = true;
@@ -343,6 +396,8 @@ public class Game {
         map.importMap();
         map.initQueue();
         menu = false;
+        game = true;
+        end = false;
         updated = true;
     }
 
@@ -359,12 +414,82 @@ public class Game {
 
     public void drawEnd(int x, int y) {
         color = red;
-        drawLogo(x, y);
+        //drawLogo(x, y);
+        TextAttributes text = new TextAttributes(CatppuccinBase, CatppuccinSky);
+        TextAttributes box  = new TextAttributes(CatppuccinSky, CatppuccinBase);
 
-        drawBox(x, y - 2, 11, 109);
-        drawBox(x, y + 9, 20, 33);
-        drawBox(x + 34, y + 9, 5, 75, " [ g a m e   o v e r ] ", new TextAttributes(CatppuccinPeach, CatppuccinBase),
-                new TextAttributes(CatppuccinPeach, CatppuccinBase));
+
+        String message = "[ t h e   c a k e   i s   a   l i e ]";
+
+        Boolean won = ( GameField.player.getLife() > 0 ) && ( GameField.player.getScore() > NPC.getNPCScore() );
+
+        if(won){
+            drawASCII(0,-1,36,120, ascii,
+                    new TextAttributes(CatppuccinSky, CatppuccinBase),
+                    new TextAttributes(CatppuccinBase, CatppuccinBase));
+
+            if(timer % 2 == 0){ offsetASCII(winascii); }
+
+            text = new TextAttributes(CatppuccinBase, CatppuccinSky);
+            box = new TextAttributes(CatppuccinSky, CatppuccinBase);
+            message = "[ e x t i n g u i s h e d   s u c c e s s f u l l y ]";
+        }
+        else if(!( GameField.player.getLife() > 0 ) && !( GameField.player.getScore() > NPC.getNPCScore() )){
+
+            text =new TextAttributes(CatppuccinBase, CatppuccinRed);
+            box = new TextAttributes(CatppuccinRed, CatppuccinBase);
+            message = "[ l o s t   &   m o l t e n ]";
+        } else if(( GameField.player.getLife() > 0 ) && !( GameField.player.getScore() > NPC.getNPCScore() )){
+            text =new TextAttributes(CatppuccinBase, CatppuccinRed);
+            box = new TextAttributes(CatppuccinRed, CatppuccinBase);
+            message = "[ y o u ' v e   l o s t ]";
+        } else if(!( GameField.player.getLife() > 0 ) && ( GameField.player.getScore() > NPC.getNPCScore() )){
+            text = new TextAttributes(CatppuccinBase, CatppuccinSky);
+            box = new TextAttributes(CatppuccinSky, CatppuccinBase);
+            message = "[ y o u ' v e   m e l t e d   a   h e r o ]";
+        }
+
+        if(!won){
+            drawAnimation(x + 3,y + 4,animationtimer + 46);
+            drawAnimation(x + 78,y + 4,animationtimer + 46);
+        }
+        cn.getTextWindow().setCursorPosition(0, 37 );
+        cn.getTextWindow().output("> press enter to restart...", color);
+        //drawBox(x, y - 2, 11, 109);
+        //drawBox(x, y + 9, 20, 33);
+        drawBox((120 - message.length())/2, 17, 3, message.length() + 2, message, text, box);
+        //drawScore(5,34);
+
+
+    }
+
+    private void offsetASCII(String winascii) {
+        String[] split = winascii.split("\n");
+
+        String w = split[split.length - 1];
+
+        for(int i = 0; i < split.length - 1; i++){
+            w += "\n" + split[i];
+        }
+        this.winascii = w;
+
+        w += "\n" + split[split.length - 1] + "\n" +  split[0] + "\n" +  split[1] + "\n" +  split[2];
+
+        updated = true;
+        this.ascii = w;
+    }
+
+    public void drawScore(int x, int y){
+        int you = GameField.player.getScore();
+        int npc = 1;
+        try { npc = NPC.getNPCScore(); } catch (Exception e){}
+        if(npc == 0) { npc = 1; }
+        if(you == 0) { you = 1; }
+
+        TextAttributes fire = new TextAttributes(CatppuccinRed, CatppuccinPeach);
+        TextAttributes ice  = new TextAttributes(CatppuccinSky, CatppuccinBlue);
+
+        drawScore(x , y, 3, 109, you, npc , new TextAttributes(CatppuccinBase, CatppuccinRed), new TextAttributes(CatppuccinRed, CatppuccinBase), fire, ice, npcChar, playerChar);
 
     }
 
@@ -438,6 +563,82 @@ public class Game {
         cn.getTextWindow().output(x + width - 1, y + length - 1, boxChars[5], color);
     }
 
+    public void drawScore(int x, int y, int length, int width, int you, int npc, TextAttributes textC, TextAttributes box, TextAttributes fire, TextAttributes ice, char firechar, char icechar) {
+
+        Double ratio = (double) (you * 1.0)/(you * 1.0 + npc * 1.0);
+
+        int yourchars = (int) ((width - 4) * ratio);
+        int npcschars  = (width - 4) - yourchars;
+
+        /*while(yourchars + npcschars > 107) { yourchars--; npcschars--; }
+        while(yourchars + npcschars < 107) { npcschars++;  yourchars++;}
+        while(yourchars + npcschars > 107) { npcschars--;}*/
+
+        if(yourchars > npcschars) { box = new TextAttributes(CatppuccinSky, CatppuccinBase); }
+        else {box = new TextAttributes(CatppuccinRed, CatppuccinBase); }
+        color = box;
+        drawBox(x, y, length, width);
+
+        for(int i = 0; i < width - 4; i++){
+            cn.getTextWindow().setCursorPosition(x + 2 + i, y + 1 );
+            if(i < yourchars) {
+                cn.getTextWindow().output(icechar, ice);
+            } else{
+                cn.getTextWindow().output(firechar, fire);
+            }
+        }
+
+        color = white;
+    }
+
+
+    public void drawASCII(int x, int y, int length, int width, String text, TextAttributes textC, TextAttributes box) {
+        color = box;
+        String[] par = text.split("\n");
+
+        color = textC;
+        for (int i = 0; i < par.length; i++) {
+            try {
+                int offx = (width - par[i].length() + 1) / 2;
+                int offy = (length - par.length - (length) % 2) / 2;
+
+                if (par[i].charAt(0) == '[') {
+                    color = new TextAttributes(CatppuccinBase, CatppuccinRed);
+                    String[] sel = par[i].split("]");
+                    sel[0] = sel[0] + "]";
+
+                    cn.getTextWindow().setCursorPosition(x + offx, y + offy + i );
+                    cn.getTextWindow().output(sel[0], color);
+                    color = textC;
+
+                    cn.getTextWindow().setCursorPosition(x + offx + sel[0].length(), y + offy + i );
+                    cn.getTextWindow().output(sel[1], color);
+                }
+                else if(par[i].charAt(0) == '>' && par[i].contains(":")){
+                    color = new TextAttributes(CatppuccinRed, CatppuccinBase);
+                    String[] sel = par[i].split(":");
+                    sel[0] = sel[0] + ":";
+
+                    cn.getTextWindow().setCursorPosition(x + offx, y + offy + i );
+                    cn.getTextWindow().output(sel[0], color);
+                    color = textC;
+
+                    cn.getTextWindow().setCursorPosition(x + offx + sel[0].length(), y + offy + i );
+                    cn.getTextWindow().output(sel[1], color);
+                }
+                else{
+                    cn.getTextWindow().setCursorPosition(x + offx, y + offy + i );
+                    cn.getTextWindow().output(par[i], color);
+                    color = textC;
+                }
+            } catch (Exception E) {}
+        }
+        //cn.getTextWindow().setCursorPosition(0, 37 );
+        //cn.getTextWindow().output(par[par.length - 1].substring(0,par[par.length - 1].length()-1), color);
+
+
+    }
+
 
     public void drawBox(int x, int y, int length, int width, String text, TextAttributes textC, TextAttributes box) {
         color = box;
@@ -447,13 +648,40 @@ public class Game {
         color = textC;
         for (int i = 0; i < par.length; i++) {
             try {
-                if (par[i].charAt(0) == '[') {color = new TextAttributes(CatppuccinBase, CatppuccinRed);}
+                int offx = (width - par[i].length() + 1) / 2;
+                int offy = (length - par.length - (length) % 2) / 2;
+
+                if (par[i].charAt(0) == '[') {
+                    color = new TextAttributes(CatppuccinBase, CatppuccinRed);
+                    String[] sel = par[i].split("]");
+                    sel[0] = sel[0] + "]";
+
+                    cn.getTextWindow().setCursorPosition(x + offx, y + offy + i + 1);
+                    cn.getTextWindow().output(sel[0], color);
+                    color = textC;
+
+                    cn.getTextWindow().setCursorPosition(x + offx + sel[0].length(), y + offy + i + 1);
+                    cn.getTextWindow().output(sel[1], color);
+                }
+                else if(par[i].charAt(0) == '>' && par[i].contains(":")){
+                    color = new TextAttributes(CatppuccinRed, CatppuccinBase);
+                    String[] sel = par[i].split(":");
+                    sel[0] = sel[0] + ":";
+
+                    cn.getTextWindow().setCursorPosition(x + offx, y + offy + i + 1);
+                    cn.getTextWindow().output(sel[0], color);
+                    color = textC;
+
+                    cn.getTextWindow().setCursorPosition(x + offx + sel[0].length(), y + offy + i + 1);
+                    cn.getTextWindow().output(sel[1], color);
+                }
+                else{
+                    cn.getTextWindow().setCursorPosition(x + offx, y + offy + i + 1);
+                    cn.getTextWindow().output(par[i], color);
+                    color = textC;
+                }
             } catch (Exception E) {}
-            int offx = (width - par[i].length() + 1) / 2;
-            int offy = (length - par.length - (length) % 2) / 2;
-            cn.getTextWindow().setCursorPosition(x + offx, y + offy + i + 1);
-            cn.getTextWindow().output(par[i], color);
-            color = textC;
+            color = white;
         }
     }
 
@@ -486,6 +714,9 @@ public class Game {
             public void mouseDragged(TextMouseEvent textMouseEvent) {
                 motx = textMouseEvent.getX();
                 moty = textMouseEvent.getY();
+                if(game && !end){
+                    if(debug || map.player.getPackedIce() > 0) { map.throwIce(motx, moty); } }
+
             }
         };
         cn.getTextWindow().addTextMouseMotionListener(mouseListener);
@@ -510,28 +741,38 @@ public class Game {
         cn.getTextWindow().output(px, py, 'P');
 
         while (true) {
+            /*
             try {
-                setTitle("[ f i r e   a n d   i c e ] - Ice : " + GameField.player.getScore() + " pts, Fire: " + GameField.npcs[0].getScore() + " pts " + motx + " " + moty);
+                setTitle("[ f i r e   a n d   i c e ] - Ice : " + GameField.player.getScore() + " pts, Fire: " + NPC.getNPCScore() + " pts " + motx + " " + moty);
             } catch (Exception e){
                 setTitle("[ f i r e   a n d   i c e ] - Ice : " + GameField.player.getScore() + "pts, Fire: 0 pts");
-            }
+            }*/
             if (updated) {refresh();}
             if (debug) {
-                drawBox(5, 0, 3, 109, "[ d e v   m o d e   a c t i v a t e d ]", new TextAttributes(CatppuccinBase,
+                drawBox(5, 1, 3, 109, "[ d e v   m o d e   a c t i v a t e d ]", new TextAttributes(CatppuccinBase,
+                        CatppuccinRed), red);
+                color = white;
+            }   else if(game){
+                drawBox(5, 1, 3, 109, "[ f i r e   a n d   i c e ]", new TextAttributes(CatppuccinBase,
                         CatppuccinRed), red);
                 color = white;
             }
-            if (menu) { menu(); }
-            //drawBox( 5,34,3,30,"menuselect : " + menuselect);
-            if (!menu) { fireandice(); }
 
             if (end) {
                 gameover();
             }
+            if (menu) { menu(); }
+            //drawBox( 5,34,3,30,"menuselect : " + menuselect);
+            if (game) { fireandice(); }
+
+
 
             if (mousepr == 1) {  // if mouse button pressed
                 //cn.getTextWindow().output(mousex,mousey,'#');  // write a char to x,y position without changing
                 // cursor position
+
+                if(game && !end){ if(debug || map.player.getPackedIce() > 0) { map.throwIce(motx, moty);} }
+
                 px = mousex;
                 py = mousey;
 
@@ -586,7 +827,8 @@ public class Game {
                         }
                     }
 
-                } else {
+                }
+                if(game) {
                     if (rkey == KeyEvent.VK_LEFT || rkey == KeyEvent.VK_A) {
                         GameField.move(Character.Direction.LEFT);
                         GameField.player.setDirection(Character.Direction.LEFT);
@@ -610,7 +852,8 @@ public class Game {
                         updated = true;
                     }
                     if (rkey == KeyEvent.VK_SPACE) {
-                        map.throwIce();
+                        if(game && !end){
+                            if(debug || map.player.getPackedIce() > 0) { map.throwIce();} }
                         updated = true;
                     }
                     if (rkey == KeyEvent.VK_F && debug) {
@@ -619,6 +862,7 @@ public class Game {
                     }
                     if (rkey == KeyEvent.VK_G && debug) {
                         map.addObject(new GameObject(map.getBlank(), GameObject.Type.SCORE3));
+                        GameField.player.score(1000);
                         updated = true;
                     }
                     if (rkey == KeyEvent.VK_R && debug) {
@@ -629,6 +873,9 @@ public class Game {
                         map.addFire();
                         //map.addObject(new GameObject(map.getBlank(), GameObject.Type.FIRE));
                         updated = true;
+                    }
+                    if (rkey == KeyEvent.VK_U && debug) {
+                        universalTimer += 5;
                     }
 
 
@@ -656,20 +903,25 @@ public class Game {
     }
 
     private void gameover() {
+        menu = false;
+        game = false;
         refresh();
-        drawAnimation(5 + 2, 5 + 10, animationtimer + 46);
-        if (updated) {drawEnd(5, 5);}
-        updated = false;
+        //drawAnimation(5 + 2, 5 + 11, animationtimer + 46);
+        if (updated) {drawEnd(5, 6);}
+        updated = true;
+
+
     }
 
     private void fireandice() {
         fireSpread();
+        iceSpread();
         if (GameField.objects[GameField.player.getY() - 1][GameField.player.getX() - 1] != null) {
             switch (GameField.objects[GameField.player.getY() - 1][GameField.player.getX() - 1].getType()) {
                 case SCORE1 -> GameField.player.score(3);
                 case SCORE2 -> GameField.player.score(10);
                 case SCORE3 -> GameField.player.score(30);
-                case PACKEDICE -> GameField.player.packedIce++;
+                case PACKEDICE -> GameField.player.PackedIce(1);
                 case FIRE -> { GameField.player.damage(100);
                     map.removeFire(GameField.player.getCoordinate());
                 }
@@ -681,56 +933,106 @@ public class Game {
             moveNPCs();
             updated = true;
         }
+
         if (updated) {
             color = red;
-
             drawBox(31, 7, 25, 57);
             drawMap(33, 8);
-            drawBox(5, 7, 25, 25,
-                    GameField.player.getCoordinate().toString() + " " + map.getNearestScore(GameField.player.getCoordinate()).toString(), white, red);
-            drawBox(89, 7, 25, 25, GameField.player.getLife() + " " + GameField.player.getScore(), white, red);
+            drawScore(5,32);
+
+
+            String playerMenu =
+                     "[ s t a t s ]\n \n" +
+                            "> score    : "        + String.format("%8s", GameField.player.getScore()) + "\n" +
+                    "> ice      : "        + String.format("%8s", GameField.player.getPackedIce()) + "\n" +
+                    "> location : "        + String.format("%8s",GameField.player.getCoordinate().toString()) + "\n"+
+                    "> health   : "        + String.format("%8s",GameField.player.getLife())    +"\n" +
+                    "> extinguished : "        + String.format("%4s",GameField.player.getKills())
+                            + "\n \n[ m i s c ]\n \n" +
+                    "> mouse    : "        + String.format("%8s", Coordinate.toString(motx,moty)) + "\n" +
+                    "> nearest  : "        + String.format("%8s", map.getNearestScore(GameField.player.getCoordinate()).toString()) +  "\n" +
+                    "\n \n \n \n \n \n...\n"+boxChars[0];
+
+            String computerMenu =
+                    "[ s t a t s ]\n \n" +
+                            "> score    : "        + String.format("%8s", NPC.getNPCScore()) + "\n" +
+                            "> npcs     : "        + String.format("%8s", GameField.npcCtr) + "\n" +
+                            "> flames   : "        + String.format("%8s",GameField.fireCtr) + "\n"+
+                            "> extinguished : "        + String.format("%4s",GameField.player.getKills())
+                            + "\n \n[ m i s c ]\n \n" +
+                            "> mouse    : "        + String.format("%8s", Coordinate.toString(motx,moty)) + "\n" +
+                            "> nearest  : "        + String.format("%8s", map.getNearestScore(GameField.player.getCoordinate()).toString()) +  "\n" +
+                            "\n \n \n \n \n \n \n...\n"+boxChars[0];
+
+            drawBox(5,7,3,25,"[ p l a y e r ]", white, red);
+            drawBox(5, 10, 22, 25, playerMenu, white, red);
+
+            drawScore(5, 4,3,42,GameField.player.getLife(), 1000-GameField.player.getLife(),
+                    new TextAttributes(CatppuccinBase, CatppuccinRed),
+                    new TextAttributes(CatppuccinRed, CatppuccinBase),
+                    new TextAttributes(CatppuccinBase, CatppuccinBase),
+                    new TextAttributes(CatppuccinRed, CatppuccinBase
+            ), ' ', healthChar);
+
+            drawScore(72, 4,3,42,gameTime - universalTimer, universalTimer,
+                    new TextAttributes(CatppuccinBase, CatppuccinRed),
+                    new TextAttributes(CatppuccinRed, CatppuccinBase),
+                    new TextAttributes(CatppuccinBase, CatppuccinBase),
+                    new TextAttributes(CatppuccinText, CatppuccinSubtext1),
+                    ' ', wallChar);
+
+            drawBox(89,7,3,25,"[ c o m p u t e r ]", white, red);
+
+            drawBox(89, 10, 22, 25, computerMenu, white, red);
             //drawBox(5,2,5,109, map.queueToString(),white,red);
             color = red;
 
-            drawBox(48, 3, 3, 23, map.queueToString(), white, red);
+            drawBox(48, 4, 3, 23, map.queueToString(), white, red);
             color = white;
 
             updated = false;
         }
         if (GameField.player.getLife() <= 0) {
             end = true;
+            game = false;
             menu = false;
             updated = true;
         }}
 
     private void menu() {
-        drawAnimation(5 + 2, 5 + 10, animationtimer + 46);
-        if (updated) {drawMenu(5, 5);}
+        drawAnimation(5 + 2, 5 + 11, animationtimer + 46);
+        if (updated) {drawMenu(5, 6);}
         updated = false;
         if (menumap) {
-            drawEmpty(31, 4, 27, 57);
-            drawBox(31, 4, 3, 57, map.isLoaded() ? "[ m a p   l o a d e d ]" : "[ m a p   n o t   f o u n d " +
+            drawEmpty(31, 5, 27, 57);
+            drawBox(31, 5, 3, 57, map.isLoaded() ? "[ m a p   l o a d e d ]" : "[ m a p   n o t   f o u n d " +
                     "]", new TextAttributes(CatppuccinBase, CatppuccinRed), red);
             color = red;
-            drawBox(31, 7, 25, 57);
-            drawMap(33, 8);
+            drawBox(31, 8, 25, 57);
+            drawMap(33, 9);
             color = white;
             // drawBox(5,34, 5, 51 , map.isLoaded() ? "m a p   l o a d e d" : "m a p   n o t   f o u n d");
         }
         if (menuabout) {
             color = red;
-            String desc = "try to collect more points than the opponent.\n" + "escape from the fire (-) and " +
-                    "throw ice (+) at\n" + "the opponent                                 \n" + " \n" + "[ c o" +
-                    " n t r o l s ]\n" + " \n" + "> you can move with WASD or the arrow keys.  \n" + "> you " +
-                    "can throw ice with spacebar.           \n" + "> you can enable the developer mode with J" +
-                    "   \n" + "> while in dev mode summon packed ice, fire, \n" + "  points and robots with " +
-                    "RTFG                \n" + "> you can quit with Q                        \n" + "\n" + "[ " +
-                    "c r e d i t s ]\n" + " \n" + "> logo created with figlet using             \n" + "  " +
-                    "github.com/xero/figlet-fonts               \n" + "> animation created by aem1k with " +
-                    "javascript \n" + "  aem1k.com/fire/                            \n" + " \n" + "... \n";
-            drawEmpty(31, 4, 27, 57);
-            drawBox(31, 7, 25, 57, desc, white, red);
-            drawBox(31, 4, 3, 57, "[ a b o u t ]", new TextAttributes(CatppuccinBase, CatppuccinRed), red);
+            String desc = "try to collect more points than the opponent.\n" +
+                          "escape from the fire (-) and " +
+                          "throw ice (+) at\n" + "the opponent                                 \n" + " \n" +
+                          "[ c o n t r o l s ]\n" + " \n" +
+                          "> you can move with WASD or the arrow keys.  \n" +
+                          "> you can throw ice with spacebar.           \n" +
+                          "> you can enable the developer mode with J   \n" +
+                          "> while in dev mode summon packed ice, fire, \n" +
+                          "  points and robots with RTFG                \n" +
+                          "> you can quit with Q                        \n" + "\n" +
+                          "[ c r e d i t s ]\n" + " \n" +
+                          "> logo created with figlet using             \n" + "  " +
+                          "github.com/xero/figlet-fonts               \n" +
+                          "> animation created by aem1k with javascript \n" +
+                          "  aem1k.com/fire/                            \n" + " \n" + "... \n";
+            drawEmpty(31, 5, 27, 57);
+            drawBox(31, 8, 25, 57, desc, white, red);
+            drawBox(31, 5, 3, 57, "[ a b o u t ]", new TextAttributes(CatppuccinBase, CatppuccinRed), red);
             color = red;
             // drawBox(5,34, 5, 51 , map.isLoaded() ? "m a p   l o a d e d" : "f i l e   n o t   f o u n d");
         }
@@ -1304,5 +1606,77 @@ public class Game {
                     ("`````888888888888*`888*``````").toCharArray(), ("````888888888888``88888*`````").toCharArray(),
                     ("````8888888888*88888888``````").toCharArray(), ("``````*888888888888888```````").toCharArray(),
                     ("```````*8*`88888`888*````````").toCharArray(), ("`````````````````````````````").toCharArray()}};
+    String winascii =
+            "               *  .  *                                _//\\\\_                     *  .  *                                "+"\n"+
+                    "             . _\\/ \\/_ .                             \\_\\  /_/                  . _\\/ \\/_ .                              "+"\n"+
+                    "              \\  \\ /  /             .      .                                    \\  \\ /  /             .      .          "+"\n"+
+                    "..    ..    -==>: X :<==-           _\\/  \\/_                      ..    ..    -==>: X :<==-           _\\/  \\/_          "+"\n"+
+                    "'\\    /'      / _/ \\_ \\              _\\/\\/_                       '\\    /'      / _/ \\_ \\              _\\/\\/_           "+"\n"+
+                    "  \\\\//       '  /\\ /\\  '         _\\_\\_\\/\\/_/_/_                     \\\\//       '  /\\ /\\  '         _\\_\\_\\/\\/_/_/_       "+"\n"+
+                    "_\\\\\\///__._    *  '  *            / /_/\\/\\_\\ \\                 _.__\\\\\\///__._    *  '  *            / /_/\\/\\_\\ \\        "+"\n"+
+                    " ///\\\\\\  '                           _/\\/\\_                     '  ///\\\\\\  '                           _/\\/\\_           "+"\n"+
+                    "  //\\\\                               /\\  /\\                         //\\\\                               /\\  /\\           "+"\n"+
+                    "./    \\.             ._    _.       '      '                      ./    \\.             ._    _.       '      '          "+"\n"+
+                    "''    ''             (_)  (_)                  <> \\  / <>         ''    ''             (_)  (_)                  <> \\  /"+"\n"+
+                    "                      .\\::/.                   \\_\\/  \\/_/                               .\\::/.                   \\_\\/  \\"+"\n"+
+                    "     .:.          _.=._\\\\//_.=._                  \\\\//                 .:.          _.=._\\\\//_.=._                  \\\\//"+"\n"+
+                    "..   \\o/   ..      '=' //\\\\ '='             _<>_\\_\\<>/_/_<>_      ..   \\o/   ..      '=' //\\\\ '='             _<>_\\_\\<>/"+"\n"+
+                    ":o|   |   |o:         '/::\\'                 <> / /<>\\ \\ <>       :o|   |   |o:         '/::\\'                 <> / /<>\\"+"\n"+
+                    " ~ '. ' .' ~         (_)  (_)      _    _       _ //\\\\ _           ~ '. ' .' ~         (_)  (_)      _    _       _ //\\\\"+"\n"+
+                    "     >O<             '      '     /_/  \\_\\     / /\\  /\\ \\              >O<             '      '     /_/  \\_\\     / /\\  /"+"\n"+
+                    " _ .' . '. _                        \\\\//       <> /  \\ <>          _ .' . '. _                        \\\\//       <> /  \\"+"\n"+
+                    ":o|   |   |o:                   /\\_\\\\><\\\\ \\/                      :o|   |   |o:                   /\\_\\\\><\\\\ \\/          "+"\n"+
+                    "     ':'        . ~~\\  /~~ .       _//\\\\_                              ':'        . ~~\\  /~~ .       _//\\\\_             "+"\n"+
+                    "                _\\_._\\/_._/_      \\_\\  /_/                                        _\\_._\\/_._/_      \\_\\  /_/            "+"\n"+
+                    "                 / ' /\\ ' \\                   \\o/                                  / ' /\\ ' \\                   \\o/     "+"\n"+
+                    " o              ' __/  \\__ '              _o/.:|:.\\o_              o              ' __/  \\__ '              _o/.:|:.\\o_ "+"\n"+
+                    " :    o         ' .'|  |'.                  .\\:|:/.           o    :    o         ' .'|  |'.                  .\\:|:/.   "+"\n"+
+                    "\\'/.'                 .                 -=>>::>o<::<<=-         '.\\'/.'                 .                 -=>>::>o<::<<="+"\n"+
+                    "}@<-:                 :                   _ '/:|:\\' _           :->@<-:                 :                   _ '/:|:\\' _ "+"\n"+
+                    "/.\\'.           '.___/*\\___.'              o\\':|:'/o            .'/.\\'.           '.___/*\\___.'              o\\':|:'/o  "+"\n"+
+                    " :    o           \\* \\ / */                   /o\\             o    :    o           \\* \\ / */                   /o\\     "+"\n"+
+                    " o                 >--X--<                                         o                 >--X--<                            "+"\n"+
+                    "                  /*_/ \\_*\\                           _    _                        /*_/ \\_*\\                           "+"\n"+
+                    "                .'   \\*/   '.                        /_/  \\_\\                     .'   \\*/   '.                         "+"\n"+
+                    "                      :                                \\\\//                             :                               "+"\n"+
+                    "                      '                            /\\_\\\\><\\\\ \\/                         '                               ";
+    String ascii = winascii;
+
+
+
+    //String winascii =
+    //        "                     *  .  *                                      " + "                     *  .  *                                      \n" +
+    //                "                   . _\\/ \\/_ .                                    " + "                   . _\\/ \\/_ .                                    \n" +
+    //                "                    \\  \\ /  /             .      .                " + "                    \\  \\ /  /             .      .                \n" +
+    //                "      ..    ..    -==>: X :<==-           _\\/  \\/_                " + "      ..    ..    -==>: X :<==-           _\\/  \\/_                \n" +
+    //                "      '\\    /'      / _/ \\_ \\              _\\/\\/_                 " + "      '\\    /'      / _/ \\_ \\              _\\/\\/_                 \n" +
+    //                "        \\\\//       '  /\\ /\\  '         _\\_\\_\\/\\/_/_/_             " + "        \\\\//       '  /\\ /\\  '         _\\_\\_\\/\\/_/_/_             \n" +
+    //                "   _.__\\\\\\///__._    *  '  *            / /_/\\/\\_\\ \\              " + "   _.__\\\\\\///__._    *  '  *            / /_/\\/\\_\\ \\              \n" +
+    //                "    '  ///\\\\\\  '                           _/\\/\\_                 " + "    '  ///\\\\\\  '                           _/\\/\\_                 \n" +
+    //                "        //\\\\                               /\\  /\\                 " + "        //\\\\                               /\\  /\\                 \n" +
+    //                "      ./    \\.             ._    _.       '      '                " + "      ./    \\.             ._    _.       '      '                \n" +
+    //                "      ''    ''             (_)  (_)                  <> \\  / <>   " + "      ''    ''             (_)  (_)                  <> \\  / <>   \n" +
+    //                "                            .\\::/.                   \\_\\/  \\/_/   " + "                            .\\::/.                   \\_\\/  \\/_/   \n" +
+    //                "           .:.          _.=._\\\\//_.=._                  \\\\//      " + "           .:.          _.=._\\\\//_.=._                  \\\\//      \n" +
+    //                "      ..   \\o/   ..      '=' //\\\\ '='             _<>_\\_\\<>/_/_<>_" + "      ..   \\o/   ..      '=' //\\\\ '='             _<>_\\_\\<>/_/_<>_\n" +
+    //                "      :o|   |   |o:         '/::\\'                 <> / /<>\\ \\ <> " + "      :o|   |   |o:         '/::\\'                 <> / /<>\\ \\ <> \n" +
+    //                "       ~ '. ' .' ~         (_)  (_)      _    _       _ //\\\\ _    " + "       ~ '. ' .' ~         (_)  (_)      _    _       _ //\\\\ _    \n" +
+    //                "           >O<             '      '     /_/  \\_\\     / /\\  /\\ \\   " + "           >O<             '      '     /_/  \\_\\     / /\\  /\\ \\   \n" +
+    //                "       _ .' . '. _                        \\\\//       <> /  \\ <>   " + "       _ .' . '. _                        \\\\//       <> /  \\ <>   \n" +
+    //                "      :o|   |   |o:                   /\\_\\\\><\\\\ \\/                " + "      :o|   |   |o:                   /\\_\\\\><\\\\ \\/                \n" +
+    //                "           ':'        . ~~\\  /~~ .       _//\\\\_                   " + "           ':'        . ~~\\  /~~ .       _//\\\\_                   \n" +
+    //                "                      _\\_._\\/_._/_      \\_\\  /_/                  " + "                      _\\_._\\/_._/_      \\_\\  /_/                  \n" +
+    //                "                       / ' /\\ ' \\                   \\o/           " + "                       / ' /\\ ' \\                   \\o/           \n" +
+    //                "       o              ' __/  \\__ '              _o/.:|:.\\o_       " + "       o              ' __/  \\__ '              _o/.:|:.\\o_       \n" +
+    //                "  o    :    o         ' .'|  |'.                  .\\:|:/.         " + "  o    :    o         ' .'|  |'.                  .\\:|:/.         \n" +
+    //                "    '.\\'/.'                 .                 -=>>::>o<::<<=-     " + "    '.\\'/.'                 .                 -=>>::>o<::<<=-     \n" +
+    //                "    :->@<-:                 :                   _ '/:|:\\' _       " + "    :->@<-:                 :                   _ '/:|:\\' _       \n" +
+    //                "    .'/.\\'.           '.___/*\\___.'              o\\':|:'/o        " + "    .'/.\\'.           '.___/*\\___.'              o\\':|:'/o        \n" +
+    //                "  o    :    o           \\* \\ / */                   /o\\           " + "  o    :    o           \\* \\ / */                   /o\\           \n" +
+    //                "       o                 >--X--<                                  " + "       o                 >--X--<                                  \n" +
+    //                "                        /*_/ \\_*\\                                 " + "                        /*_/ \\_*\\                                 \n" +
+    //                "                      .'   \\*/   '.                               " + "                      .'   \\*/   '.                               \n" +
+    //                "                            :                                     " + "                            :                                     \n" +
+    //                "                            '                                     " + "                            '                                     ";
 
 }
