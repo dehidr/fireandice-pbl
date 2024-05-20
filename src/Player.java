@@ -37,6 +37,14 @@ class Player extends Character{
         player = new Player();
     }
 
+    public static int getPlayerScore(){
+        if(player == null){
+            return 0;
+        }
+        int s = player.score;
+        return s;
+    }
+
     private Player() {
         super(GameField.getInstance().getBlank(), Type.PLAYER, Direction.UP, 1000, 0);
         this.life = 1000;

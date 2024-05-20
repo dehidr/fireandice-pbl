@@ -20,10 +20,12 @@ public class GameField {
         GameObject.Type[] input = new GameObject.Type[10];
         npcs = new NPC[1071];// 51*21 = 1071
         fire = new Fire[1071];
-        ice = new Ice[100];
+        spread = new int[1071];
+        ice = new Ice[1071];
         objects = new GameObject[21][51];
         npcCtr = 0;
         fireCtr = 0;
+        spreadCtr = 0;
         iceCtr = 0;
     }
 

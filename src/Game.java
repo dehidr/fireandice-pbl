@@ -5,11 +5,10 @@ import enigma.event.TextMouseMotionListener;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-
 import enigma.console.TextAttributes;
-import org.w3c.dom.Text;
-
 import java.awt.Color;
+import java.io.*;
+import java.util.*;
 
 public class Game {
 
@@ -41,6 +40,7 @@ public class Game {
     private final Color CatppuccinCrust = new Color(17, 17, 27);
 
     public enigma.console.Console cn = Enigma.getConsole("[ f i r e   a n d   i c e ]", 120, 37, 18, 1);
+
     public TextMouseListener tmlis;
     public TextMouseMotionListener mouseListener;
     public KeyListener klis;
@@ -80,8 +80,10 @@ public class Game {
     public int keypr;   // key pressed?
     public int rkey;    // key   (for press/release)
     public boolean updated = true;
+    public boolean scorewritten = false;
     public boolean game = false;
     public boolean menu = true;
+    public boolean nick = false;
     public boolean menumap = false;
     public boolean menuabout = false;
     public boolean end = false;
@@ -91,6 +93,7 @@ public class Game {
     public int universalTimer = 0;
     public int animationtimer = 0;
     public int menuselect = 0;
+    public String username = "null";
     // ----------------------------------------------------
 
     public void restart(){
@@ -99,6 +102,7 @@ public class Game {
         mousey = 0;
         keypr = 0;
         rkey = 0;
+        scorewritten = false;
         updated = true;
         menu = true;
         end = false;
@@ -109,9 +113,147 @@ public class Game {
         animationtimer = 0;
     }
 
+    public String aestheticify(String text){
+        String temp = "";
+        try {
+            char[] acter = text.toCharArray();
+
+            for(int i = 0; i < acter.length - 1; i++){
+                temp += acter[i] + " ";
+            }
+            temp += acter[acter.length - 1];
+
+        } catch (Exception e) {
+            username = "anonymous";
+            return aestheticify(username);
+        }
+
+        return temp;
+    }
+
     public void setTitle(String title){
         cn.setTitle(title);
     }
+
+
+    public void updateScoreboard() {
+        String nick = username;
+        boolean flag = false;
+        int score = Player.getPlayerScore();
+        File scoreboard = new File("./scoreboard.txt");
+
+        try {
+            // Read existing scores
+            List<String> lines = new ArrayList<>();
+            if (scoreboard.exists()) {
+                BufferedReader br = new BufferedReader(new FileReader(scoreboard));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    lines.add(line);
+                }
+                br.close();
+            }
+
+            // Update the scores
+            for (int i = 0; i < lines.size(); i++) {
+                String[] pool = lines.get(i).split(":");
+                if (pool[0].equals(nick)) {
+                    if (Integer.parseInt(pool[1]) < score) {
+                        lines.set(i, nick + ":" + score);
+                        flag = true;
+                    }
+                    break;
+                }
+            }
+
+            // If the user was not found, add a new entry
+            if (!flag) {
+                lines.add(nick + ":" + score);
+            }
+
+            // Write updated scores back to the file
+            PrintWriter pw = new PrintWriter(new FileWriter(scoreboard));
+            for (String line : lines) {
+                pw.println(line);
+            }
+            pw.close();
+
+            this.scorewritten = true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String getScoreboard() {
+        File scoreboard = new File("./scoreboard.txt");
+        StringBuilder temp = new StringBuilder();
+
+        try {
+            if (scoreboard.exists()) {
+                Scanner sc = new Scanner(scoreboard);
+                while (sc.hasNextLine()) {
+                    temp.append(sc.nextLine()).append("\n");
+                }
+                sc.close();
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        return temp.toString();
+    }
+
+/*
+    public void updateScoreboard(){
+        String nick = username;
+        Boolean flag = false;
+        int score = Player.getPlayerScore();
+        File scoreboard = new File("./scoreboard.txt");
+        try {
+            FileWriter  fw = new FileWriter(scoreboard);
+            PrintWriter pw = new PrintWriter(fw);
+            if(scoreboard.exists()){
+                String[] sea = getScoreboard().split("\n");
+                for(int i = 0; i < sea.length; i++){
+                    try {
+                        String[] pool = sea[i].split(":");
+                        if(pool[0].equals(nick) && Integer.parseInt(pool[1]) < score){
+                            sea[i] = (nick + ":" + score);
+                            flag = true;
+                        }
+                    } catch (Exception e){}
+                }
+                String whale = "";
+                for(String fish: sea){ whale += ( fish + "\n" ); }
+                if(!flag){ whale += (nick + ":" + score); }
+
+                pw.write(whale);
+
+            } else {
+                pw.write(nick + ":" + score);
+            }
+            scorewritten = true;
+            pw.close();
+            fw.close();
+        } catch (Exception e){}
+
+    }
+
+    public String getScoreboard(){
+        File scoreboard = new File("./scoreboard.txt");
+        String temp = "";
+        if(!scoreboard.exists()){
+            try {
+                Scanner sc = new Scanner(scoreboard);
+                while(sc.hasNextLine()){
+                    temp += sc.nextLine();
+                }
+                sc.close();
+            }catch (Exception e){}
+        }
+        return temp;
+    }
+    */
 
     public void timer() {
         if(timer == 0) {universalTimer++;}
@@ -391,11 +533,23 @@ public class Game {
         refresh();
     }
 
+    public void inputUsername(){
+        refresh();
+        map.importMap();
+        map.initQueue();
+        menu = false;
+        game = false;
+        end = false;
+        nick = true;
+        updated = true;
+    }
+
     public void startGame() {
         refresh();
         map.importMap();
         map.initQueue();
         menu = false;
+        nick = false;
         game = true;
         end = false;
         updated = true;
@@ -758,6 +912,10 @@ public class Game {
                 color = white;
             }
 
+            if(nick){
+                nickInput();
+            }
+
             if (end) {
                 gameover();
             }
@@ -786,7 +944,16 @@ public class Game {
                         Main.restart();
                     }
                 }
+                if(nick){
+                    if (rkey == KeyEvent.VK_ENTER) {
+                        if(username == "" || username == null){username = "anonymous";}
+                        startGame();
+                    }
+                    if (rkey == KeyEvent.VK_ESCAPE) {
+                        username = "null";
+                    }
 
+                }
                 if (menu) {
                     if (rkey == KeyEvent.VK_LEFT) {
                         menuselect = (menuselect + 3) % 4;
@@ -817,7 +984,8 @@ public class Game {
                     if (rkey == KeyEvent.VK_ENTER) {
                         switch (menuselect) {
                             case 0: {
-                                startGame();
+                                inputUsername();
+                                //startGame();
                                 break;
                             }
                             case 3: {
@@ -902,10 +1070,34 @@ public class Game {
         }
     }
 
+    private void nickInput() {
+        drawASCII(0,-1,36,120, ascii,
+                new TextAttributes(CatppuccinSky, CatppuccinBase),
+                new TextAttributes(CatppuccinBase, CatppuccinBase));
+
+        if(timer % 2 == 0){ offsetASCII(winascii); }
+        drawBox((120 - 50)/2, 17, 3, 50 + 4, "> your nickname :                                   ",
+                new TextAttributes(CatppuccinBase, CatppuccinBase),
+                new TextAttributes(CatppuccinSky, CatppuccinBase));
+
+        if(username.equals("null")){
+            cn.getTextWindow().setCursorPosition((120 - 50)/2 + 19, 17 + 1 );
+            username = cn.readLine();
+        } else {
+            drawBox((120 - 50)/2, 17, 3, 50 + 4, "> your nickname : " + String.format("%-34s", username) ,
+                    new TextAttributes(CatppuccinText, CatppuccinBase),
+                    new TextAttributes(CatppuccinSky, CatppuccinBase));
+
+            cn.getTextWindow().setCursorPosition(0, 37 );
+            cn.getTextWindow().output("> press enter to start the game, press esc to change nickname.", color);
+        }
+    }
+
     private void gameover() {
         menu = false;
         game = false;
         refresh();
+        if(!scorewritten){ updateScoreboard(); }
         //drawAnimation(5 + 2, 5 + 11, animationtimer + 46);
         if (updated) {drawEnd(5, 6);}
         updated = true;
@@ -964,7 +1156,7 @@ public class Game {
                             "> nearest  : "        + String.format("%8s", map.getNearestScore(GameField.player.getCoordinate()).toString()) +  "\n" +
                             "\n \n \n \n \n \n \n...\n"+boxChars[0];
 
-            drawBox(5,7,3,25,"[ p l a y e r ]", white, red);
+            drawBox(5,7,3,25,"[ " + aestheticify(username) + " ]", white, red);
             drawBox(5, 10, 22, 25, playerMenu, white, red);
 
             drawScore(5, 4,3,42,GameField.player.getLife(), 1000-GameField.player.getLife(),
