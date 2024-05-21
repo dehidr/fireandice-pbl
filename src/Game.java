@@ -71,7 +71,7 @@ public class Game {
     char healthChar = '♥';
     char npcChar = '▀';
     char[] boxChars = "─│╭╮╰╯".toCharArray(); //
-
+    public static String scbrd;
 
     // ------ Standard variables for mouse and keyboard ------
     public int mousepr;          // mouse pressed?
@@ -82,10 +82,12 @@ public class Game {
     public boolean updated = true;
     public boolean scorewritten = false;
     public boolean game = false;
+    public boolean newhigh = false;
     public boolean menu = true;
     public boolean nick = false;
     public boolean menumap = false;
     public boolean menuabout = false;
+    public boolean scoreboard = false;
     public boolean end = false;
     public boolean debug = false;
     public int timer = 0;
@@ -93,6 +95,9 @@ public class Game {
     public int universalTimer = 0;
     public int animationtimer = 0;
     public int menuselect = 0;
+    public int shownoffset = 0;
+    public int nickoffset = 0;
+    public int scoreboardoffset = 0;
     public String username = "null";
     // ----------------------------------------------------
 
@@ -100,17 +105,23 @@ public class Game {
         mousepr = 0;
         mousex = 0;
         mousey = 0;
+        shownoffset = 0;
+        nickoffset = 0;
+        scoreboardoffset = 0;
         keypr = 0;
         rkey = 0;
         scorewritten = false;
         updated = true;
+        scoreboard = false;
         menu = true;
         end = false;
+        newhigh = false;
         menumap = false;
         menuabout = false;
         timer = 0;
         menuselect = 0;
         animationtimer = 0;
+        universalTimer = 0;
     }
 
     public String aestheticify(String text){
@@ -135,7 +146,6 @@ public class Game {
         cn.setTitle(title);
     }
 
-
     public void updateScoreboard() {
         String nick = username;
         boolean flag = false;
@@ -159,9 +169,10 @@ public class Game {
                 String[] pool = lines.get(i).split(":");
                 if (pool[0].equals(nick)) {
                     if (Integer.parseInt(pool[1]) < score) {
+                        newhigh = true;
                         lines.set(i, nick + ":" + score);
-                        flag = true;
                     }
+                    flag = true;
                     break;
                 }
             }
@@ -171,6 +182,13 @@ public class Game {
                 lines.add(nick + ":" + score);
             }
 
+            // Sort the list by score in descending order
+            lines.sort((a, b) -> {
+                int scoreA = Integer.parseInt(a.split(":")[1]);
+                int scoreB = Integer.parseInt(b.split(":")[1]);
+                return Integer.compare(scoreB, scoreA);
+            });
+
             // Write updated scores back to the file
             PrintWriter pw = new PrintWriter(new FileWriter(scoreboard));
             for (String line : lines) {
@@ -178,7 +196,7 @@ public class Game {
             }
             pw.close();
 
-            this.scorewritten = true;
+            scorewritten = true;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -199,64 +217,20 @@ public class Game {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-
-        return temp.toString();
+        scbrd = temp.toString();
+        return scbrd;
     }
 
-/*
-    public void updateScoreboard(){
-        String nick = username;
-        Boolean flag = false;
-        int score = Player.getPlayerScore();
-        File scoreboard = new File("./scoreboard.txt");
-        try {
-            FileWriter  fw = new FileWriter(scoreboard);
-            PrintWriter pw = new PrintWriter(fw);
-            if(scoreboard.exists()){
-                String[] sea = getScoreboard().split("\n");
-                for(int i = 0; i < sea.length; i++){
-                    try {
-                        String[] pool = sea[i].split(":");
-                        if(pool[0].equals(nick) && Integer.parseInt(pool[1]) < score){
-                            sea[i] = (nick + ":" + score);
-                            flag = true;
-                        }
-                    } catch (Exception e){}
-                }
-                String whale = "";
-                for(String fish: sea){ whale += ( fish + "\n" ); }
-                if(!flag){ whale += (nick + ":" + score); }
-
-                pw.write(whale);
-
-            } else {
-                pw.write(nick + ":" + score);
-            }
-            scorewritten = true;
-            pw.close();
-            fw.close();
-        } catch (Exception e){}
-
+    public void setUsername(String username) {
+        this.username = username;
     }
 
-    public String getScoreboard(){
-        File scoreboard = new File("./scoreboard.txt");
-        String temp = "";
-        if(!scoreboard.exists()){
-            try {
-                Scanner sc = new Scanner(scoreboard);
-                while(sc.hasNextLine()){
-                    temp += sc.nextLine();
-                }
-                sc.close();
-            }catch (Exception e){}
-        }
-        return temp;
+    public boolean isScoreWritten() {
+        return scorewritten;
     }
-    */
 
     public void timer() {
-        if(timer == 0) {universalTimer++;}
+        if(timer == 0 && game) {universalTimer++;}
         timer = (timer + 1) % 80;
         animationtimer = (animationtimer + 1) % 17;
         if(universalTimer > gameTime) {
@@ -557,13 +531,62 @@ public class Game {
 
     public void showAbout() {
         menumap = false;
-        menuabout = true;        //drawBox(5,5,);
+        menuabout = !menuabout;
+        updated = true;//drawBox(5,5,);
     }
 
     public void loadMap() {
         map.importMap();
-        menumap = true;
+        menumap = !menumap;
         menuabout = false;
+        updated = true;
+    }
+
+    public void drawScoreboard(){
+        updated = true;
+        String temp = "";
+        int wid = 49;
+        int len = 27;
+        String[] split = new String[len - 4];
+        if(scoreboard){
+
+            snow();
+
+            String scoreboard = "";
+            try{
+                scoreboard = getScoreboard();
+                for(int i = 0; i < scoreboardoffset; i++) {scoreboard = offsetArray(scoreboard);}
+
+                for(int i = 0; i < split.length; i++){
+                    if(i < scoreboard.split("\n").length){
+                        split[i] = scoreboard.split("\n")[i];
+                    } else { split[i] = "_null_";}
+                }
+                int i = 0;
+                for(String jamesMcAvoy : split){
+                    if(!Objects.equals(jamesMcAvoy, "_null_")){
+                        if(Objects.equals(jamesMcAvoy.split(":")[0], username)){
+                            temp += "> " + String.format("%-20s", "[ " +jamesMcAvoy.split(":")[0] + " ]" ) + " : " +
+                                    String.format("%20s", jamesMcAvoy.split(":")[1] + " | " + String.format("%3s", ((scoreboard.split("\n").length - scoreboardoffset + i) % scbrd.split("\n").length) + 1)) + "\n";
+                        } else {
+
+                            temp += "> " + String.format("%-20s", jamesMcAvoy.split(":")[0] ) + " : " +
+                                    String.format("%20s", jamesMcAvoy.split(":")[1] + " | " + String.format("%3s", ((scoreboard.split("\n").length - scoreboardoffset + i) % scbrd.split("\n").length) + 1)) + "\n";
+
+                        }
+                    } else {
+                        temp += " \n";
+                    }
+                    i++;
+                }
+
+
+            } catch (Exception e) { temp = "> no one played the game yet..."; }
+            drawEmpty((120 - wid)/2, 3, len + 3 , wid);
+            drawBox((120 - wid)/2, 3, 3, wid, newhigh ? "[ n e w   r e c o r d ]" : "[ s c o r e b o a r d ]", white, red);
+            drawBox((120 - wid)/2, 6, len, wid, temp, white, red);
+            //drawScroll((120 - wid)/2 + wid, 6, len,scoreboardoffset,scoreboard.split("\n").length) ;
+        }
     }
 
     public void drawEnd(int x, int y) {
@@ -578,11 +601,7 @@ public class Game {
         Boolean won = ( GameField.player.getLife() > 0 ) && ( GameField.player.getScore() > NPC.getNPCScore() );
 
         if(won){
-            drawASCII(0,-1,36,120, ascii,
-                    new TextAttributes(CatppuccinSky, CatppuccinBase),
-                    new TextAttributes(CatppuccinBase, CatppuccinBase));
-
-            if(timer % 2 == 0){ offsetASCII(winascii); }
+            snow();
 
             text = new TextAttributes(CatppuccinBase, CatppuccinSky);
             box = new TextAttributes(CatppuccinSky, CatppuccinBase);
@@ -608,7 +627,7 @@ public class Game {
             drawAnimation(x + 78,y + 4,animationtimer + 46);
         }
         cn.getTextWindow().setCursorPosition(0, 37 );
-        cn.getTextWindow().output("> press enter to restart...", color);
+        cn.getTextWindow().output("> press enter to restart...", won ? new TextAttributes(CatppuccinSky, CatppuccinBase) : new TextAttributes(CatppuccinRed, CatppuccinBase));
         //drawBox(x, y - 2, 11, 109);
         //drawBox(x, y + 9, 20, 33);
         drawBox((120 - message.length())/2, 17, 3, message.length() + 2, message, text, box);
@@ -633,6 +652,21 @@ public class Game {
         this.ascii = w;
     }
 
+    private String offsetArray(String arr) {
+        String[] split = arr.split("\n");
+
+        String w = split[split.length - 1];
+
+        for(int i = 0; i < split.length - 1; i++){
+            w += "\n" + split[i];
+        }
+
+        //w += "\n" + split[split.length - 1] + "\n" +  split[0] + "\n" +  split[1] + "\n" +  split[2];
+
+        updated = true;
+        return w;
+    }
+
     public void drawScore(int x, int y){
         int you = GameField.player.getScore();
         int npc = 1;
@@ -649,48 +683,84 @@ public class Game {
 
     public void drawMenu(int x, int y) {
         drawLogo(x, y);
-        TextAttributes text = white;
-        TextAttributes box = white;
-        color = white;
+        TextAttributes text = red;
+        TextAttributes box = red;
+        color = red;
         drawBox(x, y - 2, 11, 109);
         drawBox(x, y + 9, 20, 33);
-        color = white;
+        color = red;
 
+        String[] shown = new String[]{" s t a r t ",
+                                      " s c o r e b o a r d ",
+                                      " a b o u t ",
+                     map.isLoaded() ? " m a p   l o a d e d " : " m a p   n o t   f o u n d ",
+                                      " q u i t "};
+        shownoffset = 0;
+        if(menuselect > 2) { shownoffset = 1; } else { shownoffset = 0;}
 
-        if (menuselect == 0 || menuselect == 4) {
-            text = new TextAttributes(CatppuccinBase, CatppuccinRed);
-            box = new TextAttributes(CatppuccinRed, CatppuccinBase);
+        if (menuselect - shownoffset== 0) {
+            text = new TextAttributes(CatppuccinBase, CatppuccinSky);
+            box = new TextAttributes(CatppuccinSky, CatppuccinBase);
         }
-        drawBox(x + 34, y + 9, 5, 75, " [ s t a r t ] ", text, box);
-        text = white;
-        box = white;
+        drawBox(x + 34, y + 9, 5, 72, shown[0 + shownoffset], text, box);
+        text = red;
+        box = red;
 
-        if (menuselect == 1) {
-            text = new TextAttributes(CatppuccinBase, CatppuccinRed);
-            box = new TextAttributes(CatppuccinRed, CatppuccinBase);
+        if (menuselect - shownoffset== 1) {
+            text = new TextAttributes(CatppuccinBase, CatppuccinSky);
+            box = new TextAttributes(CatppuccinSky, CatppuccinBase);
         }
-        drawBox(x + 34, y + 14, 5, 75, " [ a b o u t ] ", text, box);
-        text = white;
-        box = white;
+        drawBox(x + 34, y + 14, 5, 72, shown[1 + shownoffset], text, box);
+        text = red;
+        box = red;
 
-        if (menuselect == 2) {
-            text = new TextAttributes(CatppuccinBase, CatppuccinRed);
-            box = new TextAttributes(CatppuccinRed, CatppuccinBase);
+        if (menuselect- shownoffset == 2) {
+            text = new TextAttributes(CatppuccinBase, CatppuccinSky);
+            box = new TextAttributes(CatppuccinSky, CatppuccinBase);
         }
-        drawBox(x + 34, y + 19, 5, 75, map.isLoaded() ? " [ m a p   l o a d e d ] " : " [ m a p   n o t   f o u n d ]" +
-                " ", text, box);
-        text = white;
-        box = white;
+        drawBox(x + 34, y + 19, 5, 72, shown[2 + shownoffset], text, box);
+        text = red;
+        box = red;
 
-        if (menuselect == 3) {
-            text = new TextAttributes(CatppuccinBase, CatppuccinRed);
-            box = new TextAttributes(CatppuccinRed, CatppuccinBase);
+        if (menuselect - shownoffset == 3 ) {
+            text = new TextAttributes(CatppuccinBase, CatppuccinSky);
+            box = new TextAttributes(CatppuccinSky, CatppuccinBase);
         }
-        drawBox(x + 34, y + 24, 5, 75, " [ q u i t ] ", text, box);
-        text = white;
-        box = white;
-
+        drawBox(x + 34, y + 24, 5, 72, shown[3 + shownoffset], text, box);
+        text = red;
+        box = red;
+        drawScroll(x + 34 + 73, y + 9, 20, menuselect, 4);
         //drawAnimation(x + 2,y+10, animationtimer + 46);
+    }
+
+
+    public void drawScroll(int x, int y, int length, int scroll, int max) {
+      int width = 2;
+      int step = length / max;
+      int current = step * scroll;
+      int before = current - (step + 1)/2;
+      int after =  current + (step - 1)/2;
+        /*
+      ╭─────────────╮
+      │             │
+      │             │
+      │             │
+      ╰─────────────╯
+          char[] boxChars = "─│╭╮╰╯".toCharArray(); //
+       */
+        for (int i = 0; i < length; i++) {
+            if (i == 0 || i == length - 1) {
+                for (int j = 0; j < width; j++) {cn.getTextWindow().output(x + j, y + i, boxChars[0], (i < after) && (i > before) ? new TextAttributes(CatppuccinRed,CatppuccinRed) : red);}
+            }
+            if (i > 0 && i < length - 1) {
+                cn.getTextWindow().output(x + 0, y + i, boxChars[1], (i < after) && (i > before) ? new TextAttributes(CatppuccinRed,CatppuccinRed) : red);
+                cn.getTextWindow().output(x + width - 1, y + i, '│', (i < after) && (i > before) ? new TextAttributes(CatppuccinRed,CatppuccinRed) : red);
+            }
+        }
+        cn.getTextWindow().output(x, y, boxChars[2], red);
+        cn.getTextWindow().output(x + width - 1, y, boxChars[3], red);
+        cn.getTextWindow().output(x, y + length - 1, boxChars[4], red);
+        cn.getTextWindow().output(x + width - 1, y + length - 1, boxChars[5], red);
     }
 
     public void drawBox(int x, int y, int length, int width) {
@@ -793,7 +863,6 @@ public class Game {
 
     }
 
-
     public void drawBox(int x, int y, int length, int width, String text, TextAttributes textC, TextAttributes box) {
         color = box;
         String[] par = text.split("\n");
@@ -805,19 +874,8 @@ public class Game {
                 int offx = (width - par[i].length() + 1) / 2;
                 int offy = (length - par.length - (length) % 2) / 2;
 
-                if (par[i].charAt(0) == '[') {
-                    color = new TextAttributes(CatppuccinBase, CatppuccinRed);
-                    String[] sel = par[i].split("]");
-                    sel[0] = sel[0] + "]";
+                if(par[i].charAt(0) == '>' && par[i].contains(":")){
 
-                    cn.getTextWindow().setCursorPosition(x + offx, y + offy + i + 1);
-                    cn.getTextWindow().output(sel[0], color);
-                    color = textC;
-
-                    cn.getTextWindow().setCursorPosition(x + offx + sel[0].length(), y + offy + i + 1);
-                    cn.getTextWindow().output(sel[1], color);
-                }
-                else if(par[i].charAt(0) == '>' && par[i].contains(":")){
                     color = new TextAttributes(CatppuccinRed, CatppuccinBase);
                     String[] sel = par[i].split(":");
                     sel[0] = sel[0] + ":";
@@ -828,6 +886,49 @@ public class Game {
 
                     cn.getTextWindow().setCursorPosition(x + offx + sel[0].length(), y + offy + i + 1);
                     cn.getTextWindow().output(sel[1], color);
+
+                    if (par[i].contains("[") && par[i].contains("]") ) {
+                        String before = par[i].substring(0, par[i].indexOf("["));
+                        String middle = par[i].substring(par[i].indexOf("["), par[i].indexOf("]") + 1);
+
+                        cn.getTextWindow().setCursorPosition(x + offx + before.length(), y + offy + i + 1);
+                        cn.getTextWindow().output(middle, new TextAttributes(CatppuccinBase, CatppuccinRed));
+                    }
+                }
+                else if ((par[i].contains("[") && par[i].contains("]")) || par[i].contains(">") ) {
+                    TextAttributes tmp = textC;
+                    if((par[i].contains("[") && par[i].contains("]"))){
+
+                        String before = par[i].substring(0, par[i].indexOf("["));
+                        String middle = par[i].substring(par[i].indexOf("["), par[i].indexOf("]") + 1);
+                        String after  = par[i].substring(par[i].indexOf("]") + 1);
+
+                        String[] sel = par[i].split("]");
+                        sel[0] = sel[0] + "]";
+
+                        cn.getTextWindow().setCursorPosition(x + offx, y + offy + i + 1);
+                        cn.getTextWindow().output(before, textC);
+
+                        cn.getTextWindow().setCursorPosition(x + offx + before.length() + middle.length() , y + offy + i + 1);
+                        cn.getTextWindow().output(after, textC);
+
+                        cn.getTextWindow().setCursorPosition(x + offx + before.length(), y + offy + i + 1);
+                        cn.getTextWindow().output(middle, new TextAttributes(CatppuccinBase, CatppuccinRed));
+                    }
+
+                    if(par[i].contains(">")){
+                        String abefore = par[i].substring(0, par[i].indexOf(">"));
+                        String amiddle = par[i].substring(par[i].indexOf(">"), par[i].indexOf(">") + 1);
+
+                        if(!(par[i].contains("[") && par[i].contains("]"))){
+                            cn.getTextWindow().setCursorPosition(x + offx, y + offy + i + 1);
+                            cn.getTextWindow().output(par[i], textC);
+                        }
+
+                        cn.getTextWindow().setCursorPosition(x + offx + abefore.length(), y + offy + i + 1);
+                        cn.getTextWindow().output(amiddle, new TextAttributes(CatppuccinRed, CatppuccinBase));
+                    }
+
                 }
                 else{
                     cn.getTextWindow().setCursorPosition(x + offx, y + offy + i + 1);
@@ -895,6 +996,7 @@ public class Game {
         cn.getTextWindow().output(px, py, 'P');
 
         while (true) {
+            setTitle("[ f i r e   a n d   i c e ] " + username);
             /*
             try {
                 setTitle("[ f i r e   a n d   i c e ] - Ice : " + GameField.player.getScore() + " pts, Fire: " + NPC.getNPCScore() + " pts " + motx + " " + moty);
@@ -916,8 +1018,11 @@ public class Game {
                 nickInput();
             }
 
-            if (end) {
+            if (end && !scoreboard) {
                 gameover();
+            }
+            if (end && scoreboard){
+                drawScoreboard();
             }
             if (menu) { menu(); }
             //drawBox( 5,34,3,30,"menuselect : " + menuselect);
@@ -937,50 +1042,74 @@ public class Game {
                 mousepr = 0;     // last action
             }
             if (keypr == 1) {    // if keyboard button pressed
-                if(end){
+                if(end && scoreboard){
                     if (rkey == KeyEvent.VK_ENTER) {
                         restart();
                         refresh();
                         Main.restart();
                     }
+                } else if(end && !scoreboard){
+                    if (rkey == KeyEvent.VK_ENTER) {
+                        callScoreboard();
+                    }
                 }
                 if(nick){
                     if (rkey == KeyEvent.VK_ENTER) {
-                        if(username == "" || username == null){username = "anonymous";}
-                        startGame();
+                        switch (nickoffset){
+                            case 0: { menuselect = 1; scoreboard = true; nick = false; menu = true; break;}
+                            case 1: { username = "null"; break;}
+                            case 2: {if(username == "" || username == null){username = "anonymous";}
+                                startGame(); break;}
+                        }
                     }
                     if (rkey == KeyEvent.VK_ESCAPE) {
-                        username = "null";
+                        menuselect = 1; scoreboard = true; nick = false; menu = true;
                     }
-
+                    if (rkey == KeyEvent.VK_LEFT) {
+                        nickoffset = (nickoffset + 2) % 3;
+                    }
+                    if (rkey == KeyEvent.VK_RIGHT) {
+                        nickoffset = (nickoffset + 1) % 3;
+                    }
                 }
                 if (menu) {
                     if (rkey == KeyEvent.VK_LEFT) {
-                        menuselect = (menuselect + 3) % 4;
-                        menuabout = false;
-                        menumap = false;
-                        updated = true;
+                        if(!scoreboard){
+                            menuselect = (menuselect + 4) % 5;
+                            menuabout = false;
+                            scoreboard = false;
+                            menumap = false;
+                            updated = true;
+                        }
                     }
                     if (rkey == KeyEvent.VK_RIGHT) {
-                        menuselect = (menuselect + 1) % 4;
-                        menuabout = false;
-                        menumap = false;
-                        updated = true;
+                        if(!scoreboard){
+                            menuselect = (menuselect + 1) % 5;
+                            menuabout = false;
+                            scoreboard = false;
+                            menumap = false;
+                            updated = true;
+                        }
                     }
                     if (rkey == KeyEvent.VK_UP) {
-                        menuselect = (menuselect + 3) % 4;
-                        menuabout = false;
-                        menumap = false;
-                        updated = true;
+                        if(!scoreboard){
+                            menuselect = (menuselect + 4) % 5;
+                            menuabout = false;
+                            menumap = false;
+                            scoreboard = false;
+                            updated = true;
+                        }else { scoreboardoffset = (scoreboardoffset + 1) % (scbrd.split("\n").length + 1); }
                     }
                     if (rkey == KeyEvent.VK_DOWN) {
-                        menuselect = (menuselect + 1) % 4;
-                        menuabout = false;
-                        menumap = false;
-                        updated = true;
+                        if(!scoreboard){
+                            menuselect = (menuselect + 1) % 5;
+                            menuabout = false;
+                            menumap = false;
+                            scoreboard = false;
+                            updated = true;
+                        }else { scoreboardoffset = (scoreboardoffset + scbrd.split("\n").length ) % (scbrd.split("\n").length + 1); }
                     }
-                    if (menuselect == 2) {loadMap();}
-                    if (menuselect == 1) {showAbout();}
+
                     if (rkey == KeyEvent.VK_ENTER) {
                         switch (menuselect) {
                             case 0: {
@@ -988,10 +1117,14 @@ public class Game {
                                 //startGame();
                                 break;
                             }
-                            case 3: {
+                            case 1 : { callScoreboard(); break; }
+                            case 2 : { showAbout(); break; }
+                            case 3 : { loadMap(); break; }
+                            case 4: {
                                 System.exit(0);
                                 break;
                             }
+
                         }
                     }
 
@@ -1070,15 +1203,34 @@ public class Game {
         }
     }
 
-    private void nickInput() {
-        drawASCII(0,-1,36,120, ascii,
-                new TextAttributes(CatppuccinSky, CatppuccinBase),
-                new TextAttributes(CatppuccinBase, CatppuccinBase));
+    private void callScoreboard() {
+        updateScoreboard();
+        if(username.equals("null")){ username = "anonymous"; }
+        scoreboard = !scoreboard;
+        menuabout = false;
+        menumap = false;
+        updated = true;
+    }
 
-        if(timer % 2 == 0){ offsetASCII(winascii); }
+    private void nickInput() {
+        snow();
+        drawEmpty((120 - 50)/2, 17, 6, 54);
+
+
         drawBox((120 - 50)/2, 17, 3, 50 + 4, "> your nickname :                                   ",
                 new TextAttributes(CatppuccinBase, CatppuccinBase),
                 new TextAttributes(CatppuccinSky, CatppuccinBase));
+        drawBox((120 - 50)/2, 20, 3, 18, "cancel",
+                nickoffset == 0 ? new TextAttributes(CatppuccinBase, CatppuccinRed) : new TextAttributes(CatppuccinText, CatppuccinBase),
+                nickoffset == 0 ? new TextAttributes(CatppuccinRed, CatppuccinBase) : new TextAttributes(CatppuccinSky, CatppuccinBase));
+
+        drawBox((120 - 50)/2 + 18, 20, 3, 18, "edit",
+                nickoffset == 1 ? new TextAttributes(CatppuccinBase, CatppuccinRed) : new TextAttributes(CatppuccinText, CatppuccinBase),
+                nickoffset == 1 ? new TextAttributes(CatppuccinRed, CatppuccinBase) : new TextAttributes(CatppuccinSky, CatppuccinBase));
+
+        drawBox((120 - 50)/2 + 36, 20, 3, 18, "start",
+                nickoffset == 2 ? new TextAttributes(CatppuccinBase, CatppuccinRed) : new TextAttributes(CatppuccinText, CatppuccinBase),
+                nickoffset == 2 ? new TextAttributes(CatppuccinRed, CatppuccinBase) : new TextAttributes(CatppuccinSky, CatppuccinBase));
 
         if(username.equals("null")){
             cn.getTextWindow().setCursorPosition((120 - 50)/2 + 19, 17 + 1 );
@@ -1088,8 +1240,8 @@ public class Game {
                     new TextAttributes(CatppuccinText, CatppuccinBase),
                     new TextAttributes(CatppuccinSky, CatppuccinBase));
 
-            cn.getTextWindow().setCursorPosition(0, 37 );
-            cn.getTextWindow().output("> press enter to start the game, press esc to change nickname.", color);
+            //cn.getTextWindow().setCursorPosition(0, 37 );
+            //cn.getTextWindow().output("> press enter to start the game, press esc to change nickname.", color);
         }
     }
 
@@ -1191,11 +1343,25 @@ public class Game {
             updated = true;
         }}
 
+    public  void snow(){
+        drawASCII(0,-1,36,120, ascii,
+                new TextAttributes(CatppuccinSky, CatppuccinBase),
+                new TextAttributes(CatppuccinBase, CatppuccinBase));
+
+        if(timer % 2 == 0){ offsetASCII(winascii); }
+    }
+
     private void menu() {
         drawAnimation(5 + 2, 5 + 11, animationtimer + 46);
         if (updated) {drawMenu(5, 6);}
         updated = false;
+
+        if(scoreboard){
+            drawScoreboard();
+        }
+
         if (menumap) {
+            snow();
             drawEmpty(31, 5, 27, 57);
             drawBox(31, 5, 3, 57, map.isLoaded() ? "[ m a p   l o a d e d ]" : "[ m a p   n o t   f o u n d " +
                     "]", new TextAttributes(CatppuccinBase, CatppuccinRed), red);
@@ -1206,17 +1372,21 @@ public class Game {
             // drawBox(5,34, 5, 51 , map.isLoaded() ? "m a p   l o a d e d" : "m a p   n o t   f o u n d");
         }
         if (menuabout) {
+
+            snow();
+
             color = red;
             String desc = "try to collect more points than the opponent.\n" +
                           "escape from the fire (-) and " +
                           "throw ice (+) at\n" + "the opponent                                 \n" + " \n" +
                           "[ c o n t r o l s ]\n" + " \n" +
-                          "> you can move with WASD or the arrow keys.  \n" +
-                          "> you can throw ice with spacebar.           \n" +
-                          "> you can enable the developer mode with J   \n" +
+                          "> you can move with [WASD] or the arrow keys.\n" +
+                          "> you can throw ice with [spacebar].         \n" +
+                          "> you can enable the developer mode with [J] \n" +
                           "> while in dev mode summon packed ice, fire, \n" +
-                          "  points and robots with RTFG                \n" +
-                          "> you can quit with Q                        \n" + "\n" +
+                          "  points and robots with [RTFG]              \n" +
+                          "> you can also pass time with [U]            \n" +
+                          "> you can quit with [Q]                      \n" + "\n" +
                           "[ c r e d i t s ]\n" + " \n" +
                           "> logo created with figlet using             \n" + "  " +
                           "github.com/xero/figlet-fonts               \n" +
