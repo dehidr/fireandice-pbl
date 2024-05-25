@@ -996,7 +996,7 @@ public class Game {
         cn.getTextWindow().output(px, py, 'P');
 
         while (true) {
-            setTitle("[ f i r e   a n d   i c e ] " + username);
+            setTitle("[ f i r e   a n d   i c e ] ");
             /*
             try {
                 setTitle("[ f i r e   a n d   i c e ] - Ice : " + GameField.player.getScore() + " pts, Fire: " + NPC.getNPCScore() + " pts " + motx + " " + moty);
